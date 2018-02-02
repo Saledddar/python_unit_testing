@@ -50,7 +50,7 @@ def add(x,y):
     return x+y
 ```
 
-- Ability to use lambda expression to test the result of the test, this is useful in many cases :
+- Ability to use lambda expression to test the result, this is useful in many cases :
  ```
 #lambda assertion
 @unit_test(
@@ -84,9 +84,8 @@ class JustAClass():
         return self.__class__.__name__
 ```
 
-- Clear output:
- - Failure:
- ```
+- Failure:
+```
  #As a method
  class JustAClass():
      #Failure!
@@ -102,7 +101,7 @@ class JustAClass():
      def i_will_fail(self):
          return 'Correct answer'
 ```
-   Ouput **AssertionError: demo.JustAClass.i_will_fail : Case 1** :
+   Ouput :
    ```
    >>> d.JustAClass().i_will_fail()
 Traceback (most recent call last):
@@ -111,8 +110,8 @@ Traceback (most recent call last):
     assert  result == _test[2],'{} : Case {}'.format(name,_args.index(_test)+1)
 AssertionError: demo.JustAClass.i_will_fail : Case 1
 ```
- - Skip :
-  ```
+- Skip :
+ ```
  #This will not be tested
  @unit_test(
      [
@@ -140,8 +139,8 @@ AssertionError: demo.JustAClass.i_will_fail : Case 1
 Skipped : demo.mul
 25
 ```
- - Success :
-  ```
+- Success :
+ ```
  #This will not be tested
  @unit_test(
      [
