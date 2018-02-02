@@ -145,26 +145,25 @@ Skipped : demo.mul
 
 - Success :
  ```
- #This will not be tested
+ #Simple use case
  @unit_test(
      [
          [
          #First test case
-         [4,5]   ,       #Args
-         {}      ,       #Kwargs
-         20      ,       #Assertion
+         [4,5]       ,       #Args
+         {}          ,       #Kwargs
+         9           ,       #Assertion
          ],
          [
-         #Second test case
-         [3,3]   ,       #Args
-         {}      ,       #Kwargs
-         9       ,       #Assertion
+         #Second test case, using kwargs
+         [3]         ,       #Args
+         {'y' : 3}   ,       #Kwargs
+         6           ,       #Assertion
          ]
-     ],
-     skip = True
+     ]
      )
- def mul(x,y):
-     return x*y
+ def add(x,y):
+     return x+y
 ```
 
   Output :
