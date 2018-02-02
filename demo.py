@@ -59,7 +59,7 @@ def replace(original_text,text_to_replace,replacement):
 
 #As a method
 class JustAClass():
-    #lambda assertion
+    #Method
     @unit_test(
         [
             [
@@ -71,3 +71,16 @@ class JustAClass():
         )
     def my_name(self):
         return self.__class__.__name__
+
+    #Failure!
+    @unit_test(
+        [
+            [
+            []              ,
+            {}              ,
+            'Worng answer!'    ,
+            ]
+        ]
+        )
+    def i_will_fail(self):
+        return 'Correct answer'
