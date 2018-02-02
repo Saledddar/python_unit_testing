@@ -134,7 +134,7 @@ AssertionError: demo.JustAClass.i_will_fail : Case 1
      )
  def mul(x,y):
      return x*y
-     ```
+```
 
   Output :
   ```
@@ -165,7 +165,7 @@ Skipped : demo.mul
      )
  def mul(x,y):
      return x*y
-     ```
+```
 
   Output :
   ```
