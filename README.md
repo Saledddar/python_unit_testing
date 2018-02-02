@@ -101,6 +101,7 @@ class JustAClass():
      def i_will_fail(self):
          return 'Correct answer'
 ```
+
    Ouput :
    ```
    >>> d.JustAClass().i_will_fail()
@@ -110,6 +111,7 @@ Traceback (most recent call last):
     assert  result == _test[2],'{} : Case {}'.format(name,_args.index(_test)+1)
 AssertionError: demo.JustAClass.i_will_fail : Case 1
 ```
+
 - Skip :
  ```
  #This will not be tested
@@ -133,12 +135,14 @@ AssertionError: demo.JustAClass.i_will_fail : Case 1
  def mul(x,y):
      return x*y
      ```
+
   Output :
   ```
   >>> d.mul(5,5)
 Skipped : demo.mul
 25
 ```
+
 - Success :
  ```
  #This will not be tested
@@ -162,6 +166,7 @@ Skipped : demo.mul
  def mul(x,y):
      return x*y
      ```
+
   Output :
   ```
   >>> d.add(1,2)
