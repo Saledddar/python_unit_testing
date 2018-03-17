@@ -1,5 +1,5 @@
-# Pyunet
-A unit testing tool for python
+# pytools
+A collection of tools to use in your python script
 
 Description
 --

@@ -1,3 +1,6 @@
+"""
+Unit tests made easy
+"""
 import inspect
 import types
 
@@ -6,10 +9,14 @@ TESTED_FUNCTIONS    = []
 #Set to false to skip all testing
 DO_TESTS            = True
 
-#Perform a unit test
-#The arguments for the unit test decorator are a list of list of three elements: args,kwargs, and assertion
-#If the function is a method, it must have the first argument named as self
 def unit_test(_args=[],skip = False):
+    """
+    Perform a unit test on the decorated method or function
+    Args    :
+        _args   : The arguments for the unit test decorator are a list of list of three elements: args,kwargs, and assertion.
+            If the function is a method, it must have the first argument named as self.
+        skip    : If set to True, the unit test is skipped
+    """
     def _unit_test(fn):
         def wrapper_unit_test(*args, **kwargs):
             #Checks if the function is a mehtod and should have the self argumetn passed

@@ -1,8 +1,5 @@
 from pyunet import unit_test
 
-#Set this to true
-unit_test.DO_TESTS = True
-
 #Simple use case
 @unit_test(
     [
