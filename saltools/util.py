@@ -1,3 +1,8 @@
+'''
+    A collection of tools.
+    by saledddar@gmail.com, 2018.
+'''
+
 import requests
 import os
 import lxml
