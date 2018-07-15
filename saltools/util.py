@@ -8,7 +8,9 @@ import os
 import lxml
 import traceback
 import requests
+import operator
 
+from functools import reduce
 from enum import Enum
 from pyunet import unit_test
 from datetime import datetime
@@ -315,3 +317,21 @@ def do_request(url, params =None, is_post =False, is_json= False ,headers= HEADE
 
     #Return the response
     return r
+
+@handle_exception(level=Level.ERROR)
+@unit_test(
+    [
+        {
+        'args'  : [{'a':{'b':{'c':'value'}}},['a','b','c']] ,
+        'assert': 'value' }
+    ])
+def dict_path(nested_dict, path):
+    '''
+        Gets the value in path from the nested dict.
+        Args    :
+            nested_dict : A python dict.
+            path        : The path to the value.
+        Returns :
+            The value
+    '''
+    return reduce(operator.getitem, path, nested_dict)
