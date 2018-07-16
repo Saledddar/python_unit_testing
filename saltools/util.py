@@ -9,7 +9,9 @@ import lxml
 import traceback
 import requests
 import operator
+import sys
 
+from functools import wraps
 from functools import reduce
 from enum import Enum
 from pyunet import unit_test
@@ -27,8 +29,22 @@ HEADERS={
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 #-------------------------------------------------------------
-#   Test methods
+#   Test code
 #-------------------------------------------------------------
+
+TEST_LOG_STR = '''[Date time][logger              ] [INFO    ]:
+    Msg                 : A message
+    ===================================================================================================='''.replace('\n    ','\n')
+
+TEST_EXC_STR = '''[Date time][logger              ] [ERROR   ]:
+    File                : {}
+    Origine             : util.custom_test_1
+    Type                : ZeroDivisionError
+    Line                : 423
+    Code                : x = 1/0
+    Msg                 : division by zero
+    ===================================================================================================='''.format(os.path.abspath(__file__)).replace('\n    ','\n')
+
 def read_file(path):
     '''
         Returns the content of a file.
@@ -36,6 +52,32 @@ def read_file(path):
     with open(path) as f :
         data = f.read()
     return data
+
+class datetime_mock():
+    '''
+        A mock to the datetime module.
+    '''
+    def now():
+        return datetime_mock()
+
+    def strftime(self, x):
+        return 'Date time'
+
+SAVE_DATETIME = datetime
+
+def before_test_strftime():
+    '''
+        Creates a mock for strftime
+    '''
+    global datetime
+    datetime        = datetime_mock
+
+def after_test_strftime():
+    '''
+        Removes a mock for strftime
+    '''
+    global datetime
+    datetime       = SAVE_DATETIME
 
 #-------------------------------------------------------------
 #   Logging and Exceptions
@@ -55,29 +97,33 @@ class Logger():
     '''
         Logger base, prints logs on console.
         Instance    :
-            name        : The name of the logger
+            name        : The name of the logger.
+            print_log   : Prints the log on the console if set to True.
     '''
-    def __init__(self, name= 'logger'):
-        self.name = name
+    def __init__(self, name= 'logger', print_log= False):
+        self.name       = name
+        self.print_log  = print_log
 
     @unit_test(
         [
             {
-            'args'  : [Level.CRITICAL, 'A message'] ,
-            'assert': '[{}][{:<20}] [{:<8}]: {}'.format(datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),'logger', 'CRITICAL', 'A message')+'\n'+'='*100},
+            'before': before_test_strftime,
+            'after' : after_test_strftime,
+            'args'  : [Level.INFO] ,
+            'assert': TEST_LOG_STR},
         ]
-    )
-    def log(self, level= Level.INFO, msg= 'Test message', print_log= False):
+        )
+    def log(self, level= Level.INFO, log_dict= {'Msg': 'A message'}):
         '''
             Simple logging, prints the level and msg to the screen.
             Args    :
                 level       : Logging level.
-                msg         : Message to log.
-                print_log   : Prints the log on the console if set to True.
+                log_dict    : Contians a dict with logs values.
             Returns : The log.
         '''
-        text = '[{}][{:<20}] [{:<8}]: {}'.format(datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),self.name, level.name, msg)+'\n'+'='*100
-        if print_log :
+        dict_text   = '\n'.join(['{:<20}: {}'.format(k,v) for k,v in log_dict.items()])
+        text        = '[{}][{:<20}] [{:<8}]:\n{}'.format(datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),self.name, level.name, dict_text)+'\n'+'='*100
+        if self.print_log :
             print(text)
         return text
 
@@ -91,7 +137,7 @@ class FileLogger(Logger):
             overwrite   : If True, always erase previous logs on instance creation.
     '''
     def __init__(self, name= 'logger', root= 'logs', print_log= False, overwrite= True):
-        super().__init__(name= name)
+        super().__init__(name= name, print_log= print_log)
         self.root       = root
         self.print_log  = print_log
         self.overwrite  = overwrite
@@ -103,7 +149,7 @@ class FileLogger(Logger):
             {
             'assert': lambda x: os.path.isfile(os.path.join('logs','logger','INFO.log')) }
         ]
-    )
+        )
     def create_files(self):
         '''
             Creates the files needed to save logs.
@@ -122,20 +168,21 @@ class FileLogger(Logger):
     @unit_test(
         [
             {
-            'kwargs': {'msg': 'A message'},
-            'assert': lambda x: '[{}][{:<20}] [{:<8}]: {}'.format(datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),'logger', 'INFO', 'A message')+ '\n'+ ('='*100)+ '\n' \
-                                            == read_file(os.path.join('logs','logger','INFO.log'))}
+            'before': before_test_strftime,
+            'after' : after_test_strftime,
+            'kwargs': {'log_dict':{'Msg': 'A message'}},
+            'assert': lambda x: TEST_LOG_STR+'\n' == read_file(os.path.join('logs','logger','INFO.log'))}
         ]
-    )
-    def log(self, level= Level.INFO, msg= 'Test message'):
+        )
+    def log(self, level= Level.INFO, log_dict= {'Msg': 'A message'}):
         '''
             Logs the msg into a file.
             Args    :
-                level   : The log level.
-                msg     : The message to log.
-            Returns : The log.
+                level       : The log level.
+                log_dict    : Contians a dict with logs values.
+            Returns : The log text.
         '''
-        text    = super().log(level = level, msg= msg, print_log= self.print_log)
+        text    = super().log(level = level, log_dict= log_dict)
         path    = os.path.join(self.root, self.name, level.name+ '.log')
         with open(path,'a') as f :
             f.write(text+'\n')
@@ -143,7 +190,7 @@ class FileLogger(Logger):
 
 def handle_exception(
     level           = Level.ERROR   ,
-    logger          = Logger()      ,
+    logger          = None          ,
     fall_back_value = None          ,
     before          = None          ,
     after           = None          ,
@@ -162,7 +209,8 @@ def handle_exception(
             on_failure      : Excecuted only on failure.
     '''
     def _handle_exception(fn):
-        def wrapper_handle_exception(*args, **kwargs):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
             #Set execution result to fall back value
             res = fall_back_value
 
@@ -174,8 +222,30 @@ def handle_exception(
                 #Call the function
                 res =  fn(*args,**kwargs)
             except :
-                #Extract the exception informations :
-                exception_info = '\n>>> '.join([x.strip() for x  in traceback.format_exc().split('\n')[1:] if x.strip()!=''])
+                #Extract traceback
+                exc_type, exc_obj, exc_tb   = sys.exc_info()
+                tb                          = traceback.extract_tb(exc_tb)[-1]
+
+                #Checks if the function is a mehtod and should have the self argument passed
+                try :
+                    is_method   = inspect.getargspec(fn)[0][0] == 'self'
+                except :
+                    is_method   = False
+
+                #Builds the name of the method,module.class.method or module.method
+                if is_method :
+                    class_name  = str(fn).split()[1].split('.')[0]
+                    name        = '{}.{}.{}'.format(fn.__module__, class_name, fn.__name__)
+                else :
+                    name        = '{}.{}'.format(fn.__module__, fn.__name__)
+                log_dict = {
+                    'File'      : exc_tb.tb_frame.f_code.co_filename    ,
+                    'Origine'   : name                                  ,
+                    'Type'      : exc_type.__name__                     ,
+                    'Line'      : tb[-3]                                ,
+                    'Code'      : tb[-1]                                ,
+                    'Msg'       : exc_obj.args[0]                       ,
+                    }
 
                 #Execute the failure routines
                 if on_failure :
@@ -183,7 +253,7 @@ def handle_exception(
 
                 #If log, save the logs
                 if logger:
-                    logger.log(level,'{} : {}'.format(fn.__name__,exception_info+'\n'))
+                    logger.log(level,log_dict)
 
                 #If the level is critical, raise, else discard
                 if level == level.CRITICAL:
@@ -196,7 +266,7 @@ def handle_exception(
                 if after :
                     after()
             return res
-        return wrapper_handle_exception
+        return wrapper
     return _handle_exception
 
 #-------------------------------------------------------------
@@ -335,3 +405,23 @@ def dict_path(nested_dict, path):
             The value
     '''
     return reduce(operator.getitem, path, nested_dict)
+
+
+#-------------------------------------------------------------
+#   Custom Tests
+#-------------------------------------------------------------
+
+@unit_test(
+    [
+        {
+        'before': before_test_strftime,
+        'after' : after_test_strftime,
+        'assert': lambda x: TEST_EXC_STR+'\n' == read_file(os.path.join('logs','logger','ERROR.log')) }
+    ])
+@handle_exception(logger=FileLogger())
+def custom_test_1():
+    '''
+        Test the exception handler decorator
+    '''
+    x = 1/0
+    return x
