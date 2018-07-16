@@ -40,7 +40,7 @@ TEST_EXC_STR = '''[Date time][logger              ] [ERROR   ]:
     File                : {}
     Origine             : util.custom_test_1
     Type                : ZeroDivisionError
-    Line                : 423
+    Line                : 440
     Code                : x = 1/0
     Msg                 : division by zero
     ===================================================================================================='''.format(os.path.abspath(__file__)).replace('\n    ','\n')
@@ -406,6 +406,27 @@ def dict_path(nested_dict, path):
     '''
     return reduce(operator.getitem, path, nested_dict)
 
+@unit_test(
+    [
+        {
+        'args'  : [{1: 'a'},1] ,
+        'assert': 'a' },
+        {
+        'args'  : [['a','b','c'],2] ,
+        'assert': 'c' },
+        {
+        'args'  : [['a','b','c'],5]}
+    ])
+@handle_exception(level=Level.ERROR,fall_back_value=None)
+def safe_getitem(array_or_dict, key=0):
+    '''
+        Gets an element from a dict or an array, return None if the key is not found or out of range.
+        Args    :
+            array_or_dict   : The array or dict to look into.
+            key             : The key to look for.
+        Returns : The value if found else none.
+    '''
+    return array_or_dict[key]
 
 #-------------------------------------------------------------
 #   Custom Tests

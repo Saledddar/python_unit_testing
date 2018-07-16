@@ -4,7 +4,7 @@ import sys, os
 README = open('README.md').read()
 
 setup(name='saltools',
-    version='0.0.5',
+    version='0.0.6',
     description='A collection of useful tools',
     long_description=README,
     long_description_content_type='text/markdown',
