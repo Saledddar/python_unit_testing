@@ -25,6 +25,8 @@ HEADERS={
     'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:31.0) Gecko/20100101 Firefox/31.0',
     }
 
+EXCEPTION_LOGGER = None
+
 #Disable warnings on insecure requests
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -190,7 +192,6 @@ class FileLogger(Logger):
 
 def handle_exception(
     level           = Level.ERROR   ,
-    logger          = None          ,
     fall_back_value = None          ,
     before          = None          ,
     after           = None          ,
@@ -252,8 +253,8 @@ def handle_exception(
                     on_failure()
 
                 #If log, save the logs
-                if logger:
-                    logger.log(level,log_dict)
+                if EXCEPTION_LOGGER:
+                    EXCEPTION_LOGGER.log(level,log_dict)
 
                 #If the level is critical, raise, else discard
                 if level == level.CRITICAL:
@@ -367,7 +368,7 @@ def do_request(url, params =None, is_post =False, is_json= False ,headers= HEADE
     '''
     #Log the request if log is enabled
     if logger:
-        logger.log(Level.INFO,'[REQUEST {}] : {}'.format('POST' if is_post else 'GET',url))
+        logger.log(Level.INFO,{'Request': url,'Method': 'POST' if is_post else 'GET'})
 
     #a json request
     if params and is_json :
@@ -427,22 +428,3 @@ def safe_getitem(array_or_dict, key=0):
         Returns : The value if found else none.
     '''
     return array_or_dict[key]
-
-#-------------------------------------------------------------
-#   Custom Tests
-#-------------------------------------------------------------
-
-@unit_test(
-    [
-        {
-        'before': before_test_strftime,
-        'after' : after_test_strftime,
-        'assert': lambda x: TEST_EXC_STR+'\n' == read_file(os.path.join('logs','logger','ERROR.log')) }
-    ])
-@handle_exception(logger=FileLogger())
-def custom_test_1():
-    '''
-        Test the exception handler decorator
-    '''
-    x = 1/0
-    return x
