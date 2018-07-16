@@ -30,6 +30,10 @@ EXCEPTION_LOGGER = None
 #Disable warnings on insecure requests
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
+def set_logger(logger):
+    global EXCEPTION_LOGGER
+    EXCEPTION_LOGGER = logger
+
 #-------------------------------------------------------------
 #   Test code
 #-------------------------------------------------------------
@@ -418,7 +422,7 @@ def dict_path(nested_dict, path):
         {
         'args'  : [['a','b','c'],5]}
     ])
-@handle_exception(level=Level.ERROR,fall_back_value=None)
+@handle_exception(level=Level.ERROR)
 def safe_getitem(array_or_dict, key=0):
     '''
         Gets an element from a dict or an array, return None if the key is not found or out of range.
