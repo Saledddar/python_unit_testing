@@ -333,7 +333,7 @@ def find_xpath(element,xpath):
         result = fromstring(element).xpath(xpath)
     #Else, evaluate the expression
     else :
-        result = fromstring(etree.tostring(element)).xpath(xpath)
+        result = fromstring(lxml.etree.tostring(element)).xpath(xpath)
     return result
 
 @handle_exception(level=Level.CRITICAL)
