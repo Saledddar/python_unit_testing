@@ -10,6 +10,7 @@ import traceback
 import requests
 import operator
 import sys
+import time
 
 from functools import wraps
 from functools import reduce
@@ -106,7 +107,10 @@ class Logger():
             name        : The name of the logger.
             print_log   : Prints the log on the console if set to True.
     '''
-    def __init__(self, name= 'logger', print_log= False):
+    def __init__(self   ,
+        name= 'logger'  ,
+        print_log= False):
+
         self.name       = name
         self.print_log  = print_log
 
@@ -116,8 +120,7 @@ class Logger():
             'before': before_test_strftime,
             'after' : after_test_strftime,
             'args'  : [Level.INFO] ,
-            'assert': TEST_LOG_STR},
-        ]
+            'assert': TEST_LOG_STR},],
         )
     def log(self, level= Level.INFO, log_dict= {'Msg': 'A message'}):
         '''
@@ -142,7 +145,12 @@ class FileLogger(Logger):
             print_log   : Prints the log on the console if set to True.
             overwrite   : If True, always erase previous logs on instance creation.
     '''
-    def __init__(self, name= 'logger', root= 'logs', print_log= False, overwrite= True):
+    def __init__(self,
+        name= 'logger'  ,
+        root= 'logs'    ,
+        print_log= False,
+        overwrite= True ):
+
         super().__init__(name= name, print_log= print_log)
         self.root       = root
         self.print_log  = print_log
@@ -153,8 +161,7 @@ class FileLogger(Logger):
     @unit_test(
         [
             {
-            'assert': lambda x: os.path.isfile(os.path.join('logs','logger','INFO.log')) }
-        ]
+            'assert': lambda x: os.path.isfile(os.path.join('logs','logger','INFO.log')) }],
         )
     def create_files(self):
         '''
@@ -177,8 +184,7 @@ class FileLogger(Logger):
             'before': before_test_strftime,
             'after' : after_test_strftime,
             'kwargs': {'log_dict':{'Msg': 'A message'}},
-            'assert': lambda x: TEST_LOG_STR+'\n' == read_file(os.path.join('logs','logger','INFO.log'))}
-        ]
+            'assert': lambda x: TEST_LOG_STR+'\n' == read_file(os.path.join('logs','logger','INFO.log'))}],
         )
     def log(self, level= Level.INFO, log_dict= {'Msg': 'A message'}):
         '''
@@ -194,8 +200,18 @@ class FileLogger(Logger):
             f.write(text+'\n')
         return text
 
+class SalException(Exception):
+    '''
+        An exception to raise if an exception is caught and the level is critical.
+        Instance    :
+            id  : Exception id.
+    '''
+    def __init__(self, origine):
+        self.id = origine + str(int(round(time.time() * 1000)))
+
 def handle_exception(
-    level           = Level.ERROR   ,
+    level           = Level.CRITICAL,
+    logger          = None          ,
     fall_back_value = None          ,
     before          = None          ,
     after           = None          ,
@@ -243,26 +259,36 @@ def handle_exception(
                     name        = '{}.{}.{}'.format(fn.__module__, class_name, fn.__name__)
                 else :
                     name        = '{}.{}'.format(fn.__module__, fn.__name__)
-                log_dict = {
-                    'File'      : exc_tb.tb_frame.f_code.co_filename    ,
-                    'Origine'   : name                                  ,
-                    'Type'      : exc_type.__name__                     ,
-                    'Line'      : tb[-3]                                ,
-                    'Code'      : tb[-1]                                ,
-                    'Msg'       : exc_obj.args[0]                       ,
-                    }
-
+                if exc_type != SalException:
+                    sal_exc     = SalException(name)
+                    log_dict    = {
+                        'id'        : sal_exc.id                            ,
+                        'File'      : exc_tb.tb_frame.f_code.co_filename    ,
+                        'Origine'   : name                                  ,
+                        'Type'      : exc_type.__name__                     ,
+                        'Line'      : tb[-3]                                ,
+                        'Code'      : tb[-1]                                ,
+                        'Msg'       : exc_obj.args[0]                       ,
+                        }
+                else :
+                    sal_exc     = exc_obj
+                    log_dict    = {
+                        'id'        : sal_exc.id        ,
+                        'catcher'   : name              ,
+                        }
                 #Execute the failure routines
                 if on_failure :
                     on_failure()
 
-                #If log, save the logs
-                if EXCEPTION_LOGGER:
+                #If loggers
+                if logger:
+                    logger.log(level,log_dict)
+                elif EXCEPTION_LOGGER:
                     EXCEPTION_LOGGER.log(level,log_dict)
 
                 #If the level is critical, raise, else discard
                 if level == level.CRITICAL:
-                    raise
+                    raise sal_exc
             else :
                 if on_success :
                     on_success()
@@ -278,13 +304,14 @@ def handle_exception(
 #   Tools
 #-------------------------------------------------------------
 
-@handle_exception(level=Level.CRITICAL)
+
 @unit_test(
     [
         {
         'args'  : ['folder1','folder2','file.txt'] ,
         'assert': os.path.join(os.path.dirname(os.path.realpath(__file__)),'folder1','folder2','file.txt')}
     ])
+@handle_exception()
 def create_path_in_script_directory(*args):
     '''
         Generates a path in the directory of the script.
@@ -312,13 +339,13 @@ def create_path_in_script_directory(*args):
     #return
     return file_path
 
-@handle_exception(level=Level.CRITICAL)
 @unit_test(
     [
         {
         'args'  : ['<a>A link</a>','//a/text()'] ,
         'assert': ['A link'] }
     ])
+@handle_exception()
 def find_xpath(element,xpath):
     '''
         Evaluate an xpath expression and returns the result
@@ -336,13 +363,14 @@ def find_xpath(element,xpath):
         result = fromstring(lxml.etree.tostring(element)).xpath(xpath)
     return result
 
-@handle_exception(level=Level.CRITICAL)
+
 @unit_test(
     [
         {
         'args'  : [[' a ','b ',' c']] ,
         'assert': 'a, b, c' }
     ])
+@handle_exception()
 def join_array_text(array,join_str=', '):
     '''
         Joins and adjusts a text array.
@@ -353,13 +381,14 @@ def join_array_text(array,join_str=', '):
     '''
     return join_str.join([ x.strip() for x in array if x.strip() != ''])
 
-@handle_exception(level=Level.CRITICAL)
+
 @unit_test(
     [
         {
         'args'  : ['https://api.ipify.org/'] ,
         'assert': lambda x : len(x.text.split('.'))== 4}
     ])
+@handle_exception()
 def do_request(url, params =None, is_post =False, is_json= False ,headers= HEADERS, logger= None):
     '''
         A nice wrapper for the requests module
@@ -393,13 +422,13 @@ def do_request(url, params =None, is_post =False, is_json= False ,headers= HEADE
     #Return the response
     return r
 
-@handle_exception(level=Level.ERROR)
 @unit_test(
     [
         {
         'args'  : [{'a':{'b':{'c':'value'}}},['a','b','c']] ,
         'assert': 'value' }
     ])
+@handle_exception(level=Level.ERROR)
 def dict_path(nested_dict, path):
     '''
         Gets the value in path from the nested dict.
@@ -422,7 +451,7 @@ def dict_path(nested_dict, path):
         {
         'args'  : [['a','b','c'],5]}
     ])
-@handle_exception(level=Level.ERROR)
+@handle_exception()
 def safe_getitem(array_or_dict, key=0):
     '''
         Gets an element from a dict or an array, return None if the key is not found or out of range.
