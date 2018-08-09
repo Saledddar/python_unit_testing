@@ -107,9 +107,9 @@ class Logger():
             name        : The name of the logger.
             print_log   : Prints the log on the console if set to True.
     '''
-    def __init__(self   ,
-        name= 'logger'  ,
-        print_log= False):
+    def __init__(self           ,
+        name        = 'logger'  ,
+        print_log   = False     ):
 
         self.name       = name
         self.print_log  = print_log
@@ -300,17 +300,47 @@ def handle_exception(
         return wrapper
     return _handle_exception
 
-#-------------------------------------------------------------
-#   Tools
-#-------------------------------------------------------------
+##############################################################
+#   Tests
+##############################################################
 
-
-@unit_test(
-    [
+class TESTS():
+    test_create_path_in_script_directory    = [
         {
-        'args'  : ['folder1','folder2','file.txt'] ,
-        'assert': os.path.join(os.path.dirname(os.path.realpath(__file__)),'folder1','folder2','file.txt')}
-    ])
+            'args'  : ['folder1','folder2','file.txt'] ,
+            'assert': os.path.join(os.path.dirname(os.path.realpath(__file__)),'folder1','folder2','file.txt')}]
+    test_find_xpath                         = [
+        {
+            'args'  : ['<a>A link</a>','//a/text()'] ,
+            'assert': ['A link'] }]
+    test_join_array_text                    = [
+        {
+            'args'  : [[' a ','b ',' c']] ,
+            'assert': 'a, b, c' }]
+    test_do_request                         = [
+            {
+            'args'  : ['https://api.ipify.org/'] ,
+            'assert': lambda x : len(x.text.split('.'))== 4}]
+    test_dict_path                          = [
+        {
+        'args'  : [{'a':{'b':{'c':'value'}}},['a','b','c']] ,
+        'assert': 'value' }]
+    test_safe_getitem                       = [
+        {
+            'args'  : [{1: 'a'},1] ,
+            'assert': 'a' },
+        {
+            'args'  : [['a','b','c'],2] ,
+            'assert': 'c' },
+        {
+            'args'  : [['a','b','c'],5]}]
+
+##############################################################
+#   Tools
+##############################################################
+
+
+@unit_test(TESTS.test_create_path_in_script_directory)
 @handle_exception()
 def create_path_in_script_directory(*args):
     '''
@@ -339,12 +369,7 @@ def create_path_in_script_directory(*args):
     #return
     return file_path
 
-@unit_test(
-    [
-        {
-        'args'  : ['<a>A link</a>','//a/text()'] ,
-        'assert': ['A link'] }
-    ])
+@unit_test(TESTS.test_find_xpath)
 @handle_exception()
 def find_xpath(element,xpath):
     '''
@@ -363,13 +388,7 @@ def find_xpath(element,xpath):
         result = fromstring(lxml.etree.tostring(element)).xpath(xpath)
     return result
 
-
-@unit_test(
-    [
-        {
-        'args'  : [[' a ','b ',' c']] ,
-        'assert': 'a, b, c' }
-    ])
+@unit_test(TESTS.test_join_array_text)
 @handle_exception()
 def join_array_text(array,join_str=', '):
     '''
@@ -381,13 +400,7 @@ def join_array_text(array,join_str=', '):
     '''
     return join_str.join([ x.strip() for x in array if x.strip() != ''])
 
-
-@unit_test(
-    [
-        {
-        'args'  : ['https://api.ipify.org/'] ,
-        'assert': lambda x : len(x.text.split('.'))== 4}
-    ])
+@unit_test(TESTS.test_do_request)
 @handle_exception()
 def do_request(url, params =None, is_post =False, is_json= False ,headers= HEADERS, logger= None):
     '''
@@ -422,12 +435,7 @@ def do_request(url, params =None, is_post =False, is_json= False ,headers= HEADE
     #Return the response
     return r
 
-@unit_test(
-    [
-        {
-        'args'  : [{'a':{'b':{'c':'value'}}},['a','b','c']] ,
-        'assert': 'value' }
-    ])
+@unit_test(TESTS.test_dict_path)
 @handle_exception(level=Level.ERROR)
 def dict_path(nested_dict, path):
     '''
@@ -440,18 +448,8 @@ def dict_path(nested_dict, path):
     '''
     return reduce(operator.getitem, path, nested_dict)
 
-@unit_test(
-    [
-        {
-        'args'  : [{1: 'a'},1] ,
-        'assert': 'a' },
-        {
-        'args'  : [['a','b','c'],2] ,
-        'assert': 'c' },
-        {
-        'args'  : [['a','b','c'],5]}
-    ])
-@handle_exception()
+@unit_test(TESTS.test_safe_getitem)
+@handle_exception(level=Level.ERROR)
 def safe_getitem(array_or_dict, key=0):
     '''
         Gets an element from a dict or an array, return None if the key is not found or out of range.
