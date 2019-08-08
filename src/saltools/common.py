@@ -1,6 +1,54 @@
 '''Common tools used by other modules
 
     Basic low level features to be used buy other modules.
+
+    Notes:
+        EasyObj notes:
+
+        * All derived classes must call super with the provided args/kwargs when implementing ``__init__``.
+          ``super().__init__(**args, **kwargs)``
+        * EasyObj_PARAMS dict must be overridden.
+        * If args are supplied to ``__init__``, they will be assigned automatically 
+          using the order specified in ``EasyObj_PARAMS``.
+        * ``EasyObj_PARAMS`` dict keys are the name of the params, values are dict containing a default 
+          value and an adapter, both are optional, if not default value is given to a param, it is considered
+          a positional param.
+        * If no value was given to a kwarg, the default value is used, if no default 
+          value was specified, ExceptionKwargs is raised.
+        * Adapters are applied to params after setting the default values.
+        * Support for params inheritance:
+          If a class ``B`` is derived from ``A`` and both ``A`` and ``B`` are ``EasyObj`` then:
+            * ``B.EasyObj_PARAMS`` will be ``A.EasyObj_PARAMS.update(B.EasyObj_PARAMS)``
+            * The ``EasyObj_PARAMS`` order will be dependent on the order of 
+              types returned by ``inspect.getmro`` reversed.
+            * All params from all classes with no default value are considered positional, they must 
+              be supplies to ``__init__`` following the order of classes return by ``inspect.getmro`` 
+              then their order in ``EasyObj_PARAMS``.
+
+
+    Example:
+            Example for EasyObj:
+
+            >>> #Let's define out first class A:
+            >>> from saltools.common import EasyObj
+            >>> class A(EasyObj):
+            >>>     EasyObj_PARAMS  = OrderedDict((
+            >>>         ('name'     , {'default': 'Sal' , 'adapter': lambda x: 'My name is '+x  }),
+            >>>         ('age'      , {'default': 20    }                                        ),
+            >>>         ('degree'   , {}                                                         ),
+            >>>         ('degree'   , {'adapter': lambda x: x.strip()}                           )))
+            >>>     def __init__(self, *args, **kwargs):
+            >>>         super().__init__(*args, **kwargs)
+            >>> #Class B doesn't have to implement __init__ since A already does that:
+            >>> class B(A):
+            >>>     EasyObj_PARAMS  = OrderedDict((
+            >>>         ('id'   , {}                    ),
+            >>>         ('male' , {'default': True  }   ),))
+            >>> #Testing out the logic:
+            >>> A(degree= ' bachelor ').__dict__
+                {'degree': 'bachelor', 'name': 'My name is Sal', 'age': 20}
+            >>> B(degree= ' bachelor ').__dict__
+                {'degree': 'bachelor', 'id': ' id-001 ', 'name': 'My name is Sal', 'age': 20, 'male': True}
 '''
 
 from    collections     import  OrderedDict
@@ -47,58 +95,7 @@ class   EasyObj():
 
         Automatic attribute creation from params that supports default parameters, adapters,
         and inheritance.
-
-        Notes:
-            * All derived classes must call super with the provided args/kwargs when implementing ``__init__``.
-                ``super().__init__(**args, **kwargs)``
-            
-            * EasyObj_PARAMS dict must be overridden.
-            
-            * If args are supplied to ``__init__``, they will be assigned automatically 
-              using the order specified in ``EasyObj_PARAMS``.
-            
-            * ``EasyObj_PARAMS`` dict keys are the name of the params, values are dict containing a default 
-              value and an adapter, both are optional, if not default value is given to a param, it is considered
-              a positional param.
-            
-            * If no value was given to a kwarg, the default value is used, if no default 
-              value was specified, ExceptionKwargs is raised.
-            
-            * Adapters are applied to params after setting the default values.
-            
-            * Support for params inheritance:
-                If a class ``B`` is derived from ``A`` and both ``A`` and ``B`` are ``EasyObj`` then:
-
-                * ``B.EasyObj_PARAMS`` will be ``A.EasyObj_PARAMS.update(B.EasyObj_PARAMS)``
-                
-                * The ``EasyObj_PARAMS`` order will be dependent on the order of 
-                  types returned by ``inspect.getmro`` reversed.
-                
-                * All params from all classes with no default value are considered positional, they must 
-                  be supplies to ``__init__`` following the order of classes return by ``inspect.getmro`` 
-                  then their order in ``EasyObj_PARAMS``.
-
-        Example:
-            Let's define out first class A:
-            >>> from saltools.common import EasyObj
-            >>> class A(EasyObj):
-            >>>     EasyObj_PARAMS  = OrderedDict((
-            >>>         ('name'     , {'default': 'Sal' , 'adapter': lambda x: 'My name is '+x  }),
-            >>>         ('age'      , {'default': 20    }                                        ),
-            >>>         ('degree'   , {}                                                         ),
-            >>>         ('degree'   , {'adapter': lambda x: x.strip()}                           )))
-            >>>     def __init__(self, *args, **kwargs):
-            >>>         super().__init__(*args, **kwargs)
-            >>> #Class B doesn't have to implement __init__ since A already does that:
-            >>> class B(A):
-            >>>     EasyObj_PARAMS  = OrderedDict((
-            >>>         ('id'   , {}                    ),
-            >>>         ('male' , {'default': True  }   ),))
-            >>> #Testing out the logic:
-            >>> A(degree= ' bachelor ').__dict__
-                {'degree': 'bachelor', 'name': 'My name is Sal', 'age': 20}
-            >>> B(degree= ' bachelor ').__dict__
-                {'degree': 'bachelor', 'id': ' id-001 ', 'name': 'My name is Sal', 'age': 20, 'male': True}
+        
     '''
 
     #Contains params and validators for creating the object, must be overridden
