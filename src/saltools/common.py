@@ -1,4 +1,4 @@
-'''Common tools used by other modules
+'''Common tools used by other modules.
 
     Basic low level features to be used buy other modules.
 
@@ -6,7 +6,7 @@
         EasyObj notes:
 
         * All derived classes must call super with the provided args/kwargs when implementing ``__init__``.
-          ``super().__init__(**args, **kwargs)``
+          ``super().__init__(**args, **kwargs)``.
         * EasyObj_PARAMS dict must be overridden.
         * If args are supplied to ``__init__``, they will be assigned automatically 
           using the order specified in ``EasyObj_PARAMS``.
@@ -18,7 +18,7 @@
         * Adapters are applied to params after setting the default values.
         * Support for params inheritance:
           If a class ``B`` is derived from ``A`` and both ``A`` and ``B`` are ``EasyObj`` then:
-            * ``B.EasyObj_PARAMS`` will be ``A.EasyObj_PARAMS.update(B.EasyObj_PARAMS)``
+            * ``B.EasyObj_PARAMS`` will be ``A.EasyObj_PARAMS.update(B.EasyObj_PARAMS)``.
             * The ``EasyObj_PARAMS`` order will be dependent on the order of 
               types returned by ``inspect.getmro`` reversed.
             * All params from all classes with no default value are considered positional, they must 
