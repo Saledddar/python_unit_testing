@@ -17,13 +17,15 @@
           value was specified, ExceptionKwargs is raised.
         * Adapters are applied to params after setting the default values.
         * Support for params inheritance:
+
           If a class ``B`` is derived from ``A`` and both ``A`` and ``B`` are ``EasyObj`` then:
-            * ``B.EasyObj_PARAMS`` will be ``A.EasyObj_PARAMS.update(B.EasyObj_PARAMS)``.
-            * The ``EasyObj_PARAMS`` order will be dependent on the order of 
-              types returned by ``inspect.getmro`` reversed.
-            * All params from all classes with no default value are considered positional, they must 
-              be supplies to ``__init__`` following the order of classes return by ``inspect.getmro`` 
-              then their order in ``EasyObj_PARAMS``.
+          
+          * ``B.EasyObj_PARAMS`` will be ``A.EasyObj_PARAMS.update(B.EasyObj_PARAMS)``.
+          * The ``EasyObj_PARAMS`` order will be dependent on the order of 
+            types returned by ``inspect.getmro`` reversed.
+          * All params from all classes with no default value are considered positional, they must 
+            be supplies to ``__init__`` following the order of classes return by 
+            ``inspect.getmro`` then their order in ``EasyObj_PARAMS``.
 
 
     Example:

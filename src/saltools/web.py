@@ -37,7 +37,7 @@ def do_request(
             cookies (dict               ): Cookies.
 
         Returns: 
-            (requests.models.Response, requests.Session ): A response, session tuple.
+            (requests.Response, requests.Session ): A response, session tuple.
     '''
     session = session if session else requests.Session()
     session.headers.update(HEADERS)
@@ -70,7 +70,7 @@ def find_xpath(element, xpath):
         Evaluate an xpath expression and returns the result
         
         Args:
-            element (obj    ): Can be either a raw html/xml string or a n lxml element.
+            element (object ): Can be either a raw html/xml string or an lxml element.
             xpath   (str    ): xpath expression.
 
         Returns:

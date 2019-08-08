@@ -5,7 +5,7 @@ README = open('README.rst').read()
 
 setup(
     name                            = 'saltools'                                ,
-    version                         = '0.1.0.0'                                 ,
+    version                         = '0.1.0'                                   ,
     description                     = 'some usefull code'                       ,
     long_description                = README                                    ,
     long_description_content_type   = 'text/markdown'                           ,
@@ -25,7 +25,6 @@ setup(
     zip_safe                        = False                                     ,
     packages                        = ['saltools']                              ,
     install_requires                = [
-        'lxml',
-        'requests', 
-        'pyunet']
+        'lxml'              ,
+        'requests'          ]
 )

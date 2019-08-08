@@ -257,7 +257,7 @@ class Logger(EasyObj):
     def stop(self):
         '''Stop!
 
-            Save the planet!.
+            No more trees are cut, Saving the planet!.
         '''
         if not self.alive:
             return 
@@ -305,10 +305,10 @@ class Logger(EasyObj):
             Must be overridden by all derived classes.
             
             Args:
-                level       (Level)     : Logging level.
-                log_dict    (dict)      : Contains a dict with title-or-tag/log key/value
+                level       (Level              ): Logging level.
+                log_dict    (dict               ): Contains a dict with title-or-tag/log key/value
                                             this helps sorting logs by tag if needed.
-                log_datetime(datetime)  : The date of the log in iso format.
+                log_datetime(datetime.datetime  ): The date of the log in iso format.
             Returns: 
                 str         : The log string or None.
         '''
@@ -579,17 +579,17 @@ def handle_exception(
         An exception handling wrapper(decorator).
         
         Args:
-            level           (Level      ): The logging level when an exception occurs, if set to critical, the exception is also raised.
-            log             (bool       ): If set to false, no logging is done.
-            logger          (Logger     ): Used to log the traceback.
-            fall_back_value (obj        ): The value to return on exceptions.
-            before          (callable() ): Executed before the function call.
-            after           (callable() ): Excecuted after the function call regardless of success or failure.
-            on_success      (callable() ): Executed only on success.
-            on_failure      (callable() ): Excecuted only on failure.
-            log_params      (bool       ): Logs params if set to True.
-            log_start       (bool       ): Logs the function call before starting if set to True.
-            log_end         (bool       ): Logs the execution termination if set to True.
+            level           (Level                      ): The logging level when an exception occurs, if set to critical, the exception is also raised.
+            log             (bool                       ): If set to false, no logging is done.
+            logger          (Logger                     ): Used to log the traceback.
+            fall_back_value (object                     ): The value to return on exceptions.
+            before          (collections.abc.Callable   ): Executed before the function call.
+            after           (collections.abc.Callable   ): Excecuted after the function call regardless of success or failure.
+            on_success      (collections.abc.Callable   ): Executed only on success.
+            on_failure      (collections.abc.Callable   ): Excecuted only on failure.
+            log_params      (bool                       ): Logs params if set to True.
+            log_start       (bool                       ): Logs the function call before starting if set to True.
+            log_end         (bool                       ): Logs the execution termination if set to True.
     '''
     def _handle_exception(fn):
         @wraps(fn)
