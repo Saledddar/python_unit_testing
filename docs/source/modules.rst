@@ -1,8 +1,7 @@
-saltools
-========
+src
+===
 
 .. toctree::
    :maxdepth: 4
 
    saltools
-   setup

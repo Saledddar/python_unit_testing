@@ -1,3 +1,7 @@
+'''Wen utilities.
+
+    Web utilities.
+'''
 from    lxml.html       import  fromstring      , HtmlElement
 from    .logging        import  handle_exception, Level
 from    urllib.parse    import  urlencode
@@ -16,32 +20,29 @@ def do_request(
     params      = None      , 
     is_post     = False     , 
     is_json     = False     ,
-    headers     = HEADERS   , 
-    logger      = None      ,
+    headers     = HEADERS   ,
     session     = None      ,
     cookies     = {}        ):
-    '''
+    '''Simple requests wrapper.
+
         A nice wrapper for the requests module.
-        Args    :
-            url         : Request url.
-            params      : This can be either get, post or json data.
-            is_post     : True if post request.
-            is_json     : True if json request.
-            headers     : Headers if needed.
-            logger      : Logger.
-            session     : Requests session.
-            cookies     : Cookies.
-        Returns : 
-            A response, session tuple
+
+        Args:
+            url     (str                ): Request url.
+            params  (dict               ): This can be either get, post or json data.
+            is_post (bool               ): True if post request.
+            is_json (bool               ): True if json request.
+            headers (dict               ): Headers if needed.
+            session (requests.Session   ): Requests session.
+            cookies (dict               ): Cookies.
+
+        Returns: 
+            (requests.models.Response, requests.Session ): A response, session tuple.
     '''
     session = session if session else requests.Session()
     session.headers.update(HEADERS)
     for cookie in cookies:
         session.cookies.set(cookie['name'], cookie['value'])
-
-    #Log the request if log is enabled
-    if logger:
-        logger.log(Level.INFO,{'Request': url,'Method': 'POST' if is_post else 'GET'})
 
     #a json request
     if params and is_json :
@@ -64,13 +65,16 @@ def do_request(
 
 @handle_exception()
 def find_xpath(element, xpath):
-    '''
+    '''Find by xpath
+
         Evaluate an xpath expression and returns the result
-        Args    :
-            element : Can be either a raw html/xml string or a n lxml element.
-            xpath   : xpath expression.
-        Returns :
-            An array of strings
+        
+        Args:
+            element (obj    ): Can be either a raw html/xml string or a n lxml element.
+            xpath   (str    ): xpath expression.
+
+        Returns:
+            (list, str  ): An array of strings
     '''
     #If the element is a raw html text, create an lxml tree
     if type(element) is not HtmlElement :

@@ -4,46 +4,13 @@ saltools package
 Submodules
 ----------
 
-saltools.common module
-----------------------
+.. toctree::
 
-.. automodule:: saltools.common
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-saltools.files module
----------------------
-
-.. automodule:: saltools.files
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-saltools.logging module
------------------------
-
-.. automodule:: saltools.logging
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-saltools.misc module
---------------------
-
-.. automodule:: saltools.misc
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-saltools.web module
--------------------
-
-.. automodule:: saltools.web
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
+   saltools.common
+   saltools.files
+   saltools.logging
+   saltools.misc
+   saltools.web
 
 Module contents
 ---------------
