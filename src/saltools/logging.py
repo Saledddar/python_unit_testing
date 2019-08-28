@@ -144,6 +144,7 @@ from    .common                     import  EasyObj
 
 import  traceback
 import  textwrap
+import  inspect
 import  atexit
 import  queue
 import  sys
@@ -536,7 +537,7 @@ class SQLAlchemyLogger(Logger):
 
 EXCEPTION_LOGGER = None
 
-def set_logger(logger):
+def set_exception_logger(logger):
     '''Sets a global logger for all exceptions.
         
         Sets a global exception logger for all exceptions.
@@ -571,25 +572,32 @@ def handle_exception(
     after           = None          ,
     on_success      = None          ,
     on_failure      = None          ,
-    log_params      = True          ,
+    log_params      = None          ,
     log_start       = False         ,
-    log_end         = False         ):
+    log_end         = False         ,
+    attempts        = 1             ):
     '''Wrapper for exception handling.
 
         An exception handling wrapper(decorator).
         
         Args:
-            level           (Level                      ): The logging level when an exception occurs, if set to critical, the exception is also raised.
-            log             (bool                       ): If set to false, no logging is done.
-            logger          (Logger                     ): Used to log the traceback.
-            fall_back_value (object                     ): The value to return on exceptions.
-            before          (collections.abc.Callable   ): Executed before the function call.
-            after           (collections.abc.Callable   ): Excecuted after the function call regardless of success or failure.
-            on_success      (collections.abc.Callable   ): Executed only on success.
-            on_failure      (collections.abc.Callable   ): Excecuted only on failure.
-            log_params      (bool                       ): Logs params if set to True.
-            log_start       (bool                       ): Logs the function call before starting if set to True.
-            log_end         (bool                       ): Logs the execution termination if set to True.
+            level           (Level                      : Level.CRITICAL    ): The logging level when an exception occurs, 
+                if set to critical, the exception is also raised.
+            log             (bool                       : True              ): If set to false, no logging is done.
+            logger          (Logger                     : None              ): Used to log the traceback.
+            fall_back_value (object                     : None              ): The value to return on exceptions.
+            before          (collections.abc.Callable   : None              ): Executed before the function call.
+            after           (collections.abc.Callable   : None              ): Excecuted after the function call regardless 
+                of success or failure.
+            on_success      (collections.abc.Callable   : None              ): Executed only on success.
+            on_failure      (collections.abc.Callable   : None              ): Excecuted only on failure.
+            log_params      (list, str                  : []                ): Parameters to log, if None: no parameters are 
+                logged, if empty list, all parameters are logged.
+            log_start       (bool                       : False             ): Logs the function call before starting if set 
+                to True.
+            log_end         (bool                       : False             ): Logs the execution termination if set to True.
+            attempts        (int                        : 1                 ): Number of repeated attempts in case of exceptions, 
+                0 for an infinite loop. 
     '''
     def _handle_exception(fn):
         @wraps(fn)
@@ -611,61 +619,76 @@ def handle_exception(
             #Execute the before routines
             if before :
                 before()
-            if log_start:
-                do_log(Level.INFO  , {'Started': name})
 
-            try :
-                #Call the function
-                return_value =  fn(*args,**kwargs)
-            except :
-                #Extract traceback
-                exc_type, exc_obj, exc_tb   = sys.exc_info()
-                tb                          = traceback.extract_tb(exc_tb)[-1]
+            n_attempt   = 0
+            while attempts == 0 or n_attempt < attempts :
+                if log_start:
+                    do_log(Level.INFO  , {'Started {}'.format(n_attempt+ 1): name})
+                try :
+                    #Call the function
+                    return_value =  fn(*args,**kwargs)
+                except :
+                    #Extract traceback
+                    exc_type, exc_obj, exc_tb   = sys.exc_info()
+                    tb                          = traceback.extract_tb(exc_tb)[1]
 
-                if exc_type != ExceptionCritical:
-                    exc_crt     = ExceptionCritical(name)
-                    log_dict    = {
-                        'id'        : exc_crt.id                            ,
-                        'File'      : tb.filename                           ,
-                        'Origin'    : name                                  ,
-                        'Type'      : exc_type.__name__                     ,
-                        'Line'      : tb.lineno                             ,
-                        'Code'      : tb.line                               ,
-                        'Msg'       : exc_obj.args[0]                       }
+                    if exc_type != ExceptionCritical:
+                        exc_crt     = ExceptionCritical(name)
+                        log_dict    = {
+                            'id'        : exc_crt.id                            ,
+                            'File'      : tb.filename                           ,
+                            'Origin'    : name                                  ,
+                            'Type'      : exc_type.__name__                     ,
+                            'Line'      : tb.lineno                             ,
+                            'Code'      : tb.line                               ,
+                            'Msg'       : exc_obj.args[0]                       }
+                    else :
+                        exc_crt     = exc_obj
+                        log_dict    = {
+                            'id'        : exc_crt.id        ,
+                            'catcher'   : name              ,
+                            }
+
+                    log_dict['attempt'] = n_attempt
+
+                    if log_params != None :
+                        all_params  = inspect.signature(fn).parameters
+                        params_dict = {}
+
+                        for param in all_params:
+                            if all_params[param].default != inspect._empty:
+                                params_dict[param] = all_params[param].default
+                        for i in range(len(args))   :
+                            params_dict[list(all_params.keys())[i]]     = args[i]
+                        for kwarg in kwargs         :
+                            params_dict[kwarg]                          = kwargs[kwarg]
+                        
+                        if log_params != [] :
+                            params_dict = {x: params_dict[x] for x in log_params}
+
+                        for param in params_dict :
+                            log_dict['Parameter: {}'.format(param)]= str(params_dict[param])
+
+                    do_log(level, log_dict)
+
+                    #Execute the failure routines
+                    if on_failure :
+                        on_failure()
+
+                    #If the level is critical, raise, else discard
+                    if level == level.CRITICAL:
+                        raise exc_crt
                 else :
-                    exc_crt     = exc_obj
-                    log_dict    = {
-                        'id'        : exc_crt.id        ,
-                        'catcher'   : name              ,
-                        }
-                
-                if log_params :
-                    for i in range(len(args)) :
-                        log_dict['arg_{}'.format(i)]= str(args[i])
-                    
-                    i   = 0 
-                    for kwarg in kwargs :
-                        log_dict['kwarg_{}_{}'.format(i, kwarg)]= str(kwargs[kwarg])
-                        i   +=1
-
-                do_log(level, log_dict)
-
-                #Execute the failure routines
-                if on_failure :
-                    on_failure()
-
-                #If the level is critical, raise, else discard
-                if level == level.CRITICAL:
-                    raise exc_crt
-            else :
-                if log_end:
-                    do_log(Level.INFO  ,{'Finished': name})
-                if on_success :
-                    on_success()
-            finally :
-                #Execute te after routines
-                if after :
-                    after()
+                    if log_end:
+                        do_log(Level.INFO  ,{'Finished': name})
+                    if on_success :
+                        on_success()
+                    break
+                finally :
+                    #Execute te after routines
+                    if after :
+                        after()
+                    n_attempt   +=1
             return return_value
         return wrapper
     return _handle_exception

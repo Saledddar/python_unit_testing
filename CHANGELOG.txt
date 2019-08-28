@@ -1,0 +1,11 @@
+0.1.2
+    - FIX: 
+        - logging.handle_exception  : - Exception line, line number and file.
+    - NEW:
+        - logging.handle_exception  : - Change the way args are logged on exceptions.
+                                      - Option to attempt decorated functions execution multiple times on failure. 
+        - common.EasyObj            : - Object creation from a dict of params. 
+                                      - Type checking for params.
+                                      - Support for lists in typed parameters.
+                                      - Support for string to enum conversion.
+                                      - Support for custom object parsers.

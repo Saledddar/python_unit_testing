@@ -5,18 +5,18 @@ README = open('README.rst').read()
 
 setup(
     name                            = 'saltools'                                ,
-    version                         = '0.1.0'                                   ,
-    description                     = 'some usefull code'                       ,
+    version                         = '0.1.2'                                   ,
+    description                     = 'Some usefull code'                       ,
     long_description                = README                                    ,
     long_description_content_type   = 'text/markdown'                           ,
     classifiers                     =[
-          'Development Status   :: 4 - Beta'                                    ,
-          'Intended Audience    :: Developers'                                  ,
-          'License              :: OSI Approved         :: MIT License'         ,
-          'Operating System     :: Microsoft            :: Windows'             ,
+          'Development Status :: 4 - Beta'                                      ,
+          'Intended Audience :: Developers'                                     ,
+          'License :: OSI Approved :: MIT License'                              ,
+          'Operating System :: Microsoft :: Windows'                            ,
           'Programming Language :: Python'                                      ,
-          'Topic                :: Software Development :: Libraries'           ],
-    keywords                        = 'tools code useful'                       ,
+          'Topic :: Software Development :: Libraries'                          ],
+    keywords                        = 'logging exception'                       ,
     author                          = 'saledddar'                               ,
     author_email                    = 'saledddar@gmail.com'                     ,
     url                             = 'https://github.com/Saledddar/saltools'   ,
@@ -24,6 +24,7 @@ setup(
     include_package_data            = True                                      ,
     zip_safe                        = False                                     ,
     packages                        = ['saltools']                              ,
+    package_dir                     = {'': 'src'}                               ,
     install_requires                = [
         'lxml'              ,
         'requests'          ]
