@@ -174,8 +174,8 @@ class   EasyObj():
         recursive_params    = {}
         all_params          = cls._g_all_params()
 
-        for param all_params :
-            param_type = all_params.get('type')
+        for param in param all_params :
+            param_type = all_params[param].get('type')
             if      param_type and param_type   == MY_CLASS:
                 recursive_params[param] = cls
             elif    param_type and issubclass(param_type, EasyObj):
