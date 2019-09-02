@@ -139,6 +139,30 @@ class   EasyObj():
     EasyObj_PARAMS  = OrderedDict()
     
     @classmethod
+    def _g_all_params(cls):
+        def_params                  = OrderedDict()
+        def_positional_params       = OrderedDict()
+        def_non_positional_params   = OrderedDict()
+
+        #Get the full list of params from all the parent classes
+        for _type in reversed(getmro(cls)):
+            if hasattr(_type, 'EasyObj_PARAMS'):
+                #Set positional params
+                def_positional_params.update({
+                    x: _type.EasyObj_PARAMS[x] for x in _type.EasyObj_PARAMS if\
+                       'default' not in _type.EasyObj_PARAMS[x]} )
+                #Set non positional params
+                def_non_positional_params.update({
+                    x: _type.EasyObj_PARAMS[x] for x in _type.EasyObj_PARAMS if\
+                       'default' in _type.EasyObj_PARAMS[x]} )
+
+        #Merge the params
+        def_params = def_positional_params
+        def_params.update(def_non_positional_params)
+
+        return def_params
+
+    @classmethod
     def _g_recursive_params(cls):
         '''Gets parameters that implement `EasyObj`.
 
@@ -147,10 +171,11 @@ class   EasyObj():
             Returns:
                 dict    : parameter name, parameter type object.
         '''
-        recursive_params = {}
+        recursive_params    = {}
+        all_params          = cls._g_all_params()
 
-        for param in cls.EasyObj_PARAMS :
-            param_type = cls.EasyObj_PARAMS[param].get('type')
+        for param all_params :
+            param_type = all_params.get('type')
             if      param_type and param_type   == MY_CLASS:
                 recursive_params[param] = cls
             elif    param_type and issubclass(param_type, EasyObj):
@@ -174,12 +199,12 @@ class   EasyObj():
 
         recursive_params    = cls._g_recursive_params()
         kwargs              = {}
-
+        all_params          = cls._g_all_params()
         for param in params :
-            if      cls.EasyObj_PARAMS[param].get('parser') and isinstance(params[param], str)  :
-                params[param]   = cls.EasyObj_PARAMS[param].get('parser')(params[param])
+            if      cls.all_params[param].get('parser') and isinstance(params[param], str)  :
+                params[param]   = all_params[param].get('parser')(params[param])
             
-            param_type      = cls.EasyObj_PARAMS[param].get('type')     
+            param_type      = all_params[param].get('type')     
             if      not param_type:
                 kwargs[param]   = params[param]
                 continue
@@ -197,25 +222,8 @@ class   EasyObj():
         return cls(** kwargs)
 
     def __init__(self, *args, **kwargs):
-        def_params                  = OrderedDict()
-        def_positional_params       = OrderedDict()
-        def_non_positional_params   = OrderedDict()
-
-        #Get the full list of params from all the parent classes
-        for _type in reversed(getmro(type(self))):
-            if hasattr(_type, 'EasyObj_PARAMS'):
-                #Set positional params
-                def_positional_params.update({
-                    x: _type.EasyObj_PARAMS[x] for x in _type.EasyObj_PARAMS if\
-                       'default' not in _type.EasyObj_PARAMS[x]} )
-                #Set non positional params
-                def_non_positional_params.update({
-                    x: _type.EasyObj_PARAMS[x] for x in _type.EasyObj_PARAMS if\
-                       'default' in _type.EasyObj_PARAMS[x]} )
-
-        #Merge the params
-        def_params = def_positional_params
-        def_params.update(def_non_positional_params)
+        #Get all inherited params
+        def_params = type(self)._g_all_params()
         
         #Extra params check
         if len(args) > len(def_params):

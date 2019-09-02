@@ -5,7 +5,7 @@ README = open('README.rst').read()
 
 setup(
     name                            = 'saltools'                                ,
-    version                         = '0.1.2'                                   ,
+    version                         = '0.1.3'                                   ,
     description                     = 'Some usefull code'                       ,
     long_description                = README                                    ,
     long_description_content_type   = 'text/markdown'                           ,
