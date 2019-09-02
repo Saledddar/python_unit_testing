@@ -201,7 +201,7 @@ class   EasyObj():
         kwargs              = {}
         all_params          = cls._g_all_params()
         for param in params :
-            if      cls.all_params[param].get('parser') and isinstance(params[param], str)  :
+            if      all_params[param].get('parser') and isinstance(params[param], str)  :
                 params[param]   = all_params[param].get('parser')(params[param])
             
             param_type      = all_params[param].get('type')     
