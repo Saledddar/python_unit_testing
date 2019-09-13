@@ -5,10 +5,8 @@
     Notes:
         EasyObj notes:
 
-        * All derived classes must call super with the provided args/kwargs when implementing ``__init__``.
-          ``super().__init__(*args, **kwargs)`` or ``EasyObj.__init__(self, *args, **kwargs)`` in case of multiple
-          base classes.
-        * EasyObj_PARAMS dict must be overridden.
+        * All derived classes must call super with the provided args/kwargs when overriding/overloading ``__init__`` as
+            ``EasyObj.__init__(self, *args, **kwargs)`` in case of multiple base classes.
         * If args are supplied to ``__init__``, they will be assigned automatically 
           using the order specified in ``EasyObj_PARAMS``.
         * ``EasyObj_PARAMS`` dict keys are the name of the params, values are dict containing a default 
@@ -56,6 +54,7 @@
 from    collections     import  OrderedDict
 from    enum            import  Enum
 from    inspect         import  getmro
+from    pprint          import  pformat
 
 MY_CLASS    = '''
     Just something to indicate that the type of the parameter is the same
@@ -110,21 +109,28 @@ class   ExceptionWrongType  (Exception):
             param_type      (Type   ): Provided type.
     '''
     def __init__(
-        self            , 
+        self            ,
+        instanace_type  , 
         param           ,
         expected_type   ,
-        param_type      ):
+        param_type      ,
+        value           ):
+        self.instanace_type = instanace_type
         self.param          = param
         self.expected_type  = expected_type
         self.param_type     = param_type
+        self.value          = value
 
     def __str__(self):
-        return 'Wrong type for {}: expected {}, found {}.'.format(
-            self.param, self.expected_type, self.param_type)
+        return '{}, Wrong type for {}: expected {}, found {}, value {}.'.format(
+            self.instanace_type ,
+            self.param          , 
+            self.expected_type  , 
+            self.param_type     , 
+            self.value          )
 
     def __repr__(self):
         return str(self)
-
 
 class   EasyObj():
     '''Automatic attribute creation from params.
@@ -139,7 +145,52 @@ class   EasyObj():
     EasyObj_PARAMS  = OrderedDict()
     
     @classmethod
-    def _g_all_params(cls):
+    def _g_all_values       (
+        cls         ,
+        obj         ,
+        args        ,
+        kwargs      ,
+        def_params  ):
+        '''Gets all params values.
+
+            Checks and gets all params values including default params
+        '''
+        #Extra params check
+        if len(args) > len(def_params):
+            extra_params = [
+                'Param at postition '+ str(i+1) for i in range(len(def_params), len(args))]
+            raise ExceptionKwargs(obj, extra_params, InfoExceptionType.EXTRA, def_params)
+
+        #Check for params appearing twice
+        def_params_names= list(def_params.keys()) 
+        params_args     = {
+            list(def_params.keys())[i] : args[i] for i in range(len(args))}
+        twice_params    = [
+            kwarg for kwarg in kwargs if kwarg in params_args]
+        if twice_params:
+            raise ExceptionKwargs(obj, twice_params, InfoExceptionType.PROVIDED_TWICE, def_params)
+        
+        params  = kwargs
+        params.update(params_args)
+
+        default_params = {
+            x:def_params[x]['default'] for x in def_params \
+                if 'default' in def_params[x] and x not in params}
+        params.update(default_params)
+
+        extra_params    = [
+            k for k in params if k not in def_params] 
+        if  extra_params     :
+            raise ExceptionKwargs(obj, extra_params, InfoExceptionType.EXTRA, def_params)
+
+        missing_params  = [
+            k for k in def_params if k not in params] 
+        if  missing_params   :
+            raise ExceptionKwargs(obj, missing_params, InfoExceptionType.MISSING, def_params)
+        return  params
+    @classmethod
+    def _g_all_params       (
+        cls ):
         def_params                  = OrderedDict()
         def_positional_params       = OrderedDict()
         def_non_positional_params   = OrderedDict()
@@ -161,9 +212,10 @@ class   EasyObj():
         def_params.update(def_non_positional_params)
 
         return def_params
-
     @classmethod
-    def _g_recursive_params(cls):
+    def _g_recursive_params (
+        cls         ,
+        def_params  ):
         '''Gets parameters that implement `EasyObj`.
 
             Gets all __init__ paramaters that are derived from `EasyObj`
@@ -172,123 +224,110 @@ class   EasyObj():
                 dict    : parameter name, parameter type object.
         '''
         recursive_params    = {}
-        all_params          = cls._g_all_params()
+        def_params          = cls._g_all_params()
 
-        for param in all_params :
-            param_type = all_params[param].get('type')
-            if      param_type and param_type   == MY_CLASS:
-                recursive_params[param] = cls
-            elif    param_type and issubclass(param_type, EasyObj):
-                recursive_params[param] = param_type
-        
-        return recursive_params
-            
-    @classmethod
-    def g_from_dict(cls, params):
-        '''Gets an object instance from a python `dict`.
-
-            Creates an instance from a dict of params, nested dicts can be used to instantiate 
-            parameters that are derived from EasyObj:
-
-            Args:
-                params  : Object parameteres as dict.
-            Returns:
-                EasyObj : An instance of the type.
-        '''
-        assert isinstance(params, dict), 'An instance of EasyObject must only be created from a dict.'
-
-        recursive_params    = cls._g_recursive_params()
-        kwargs              = {}
-        all_params          = cls._g_all_params()
-        for param in params :
-            if      all_params[param].get('parser') and isinstance(params[param], str)  :
-                params[param]   = all_params[param].get('parser')(params[param])
-            
-            param_type      = all_params[param].get('type')     
-            if      not param_type:
-                kwargs[param]   = params[param]
+        for param in def_params :
+            def_type = def_params[param].get('type')
+            if      not def_type                    :
                 continue
-            if      param in  recursive_params:
-                param_type  = recursive_params[param]
-                if      isinstance(params[param], list):
-                    kwargs[param]   = [param_type.g_from_dict(y)            \
-                        if  not isinstance(y, param_type) else y for y in params[param]]
-                else    :
-                    kwargs[param]   = param_type.g_from_dict(params[param]) \
-                        if not isinstance(params[param], param_type) else params[param]
-            elif    issubclass(param_type, Enum) and isinstance(params[param], str):
-                    kwargs[param]   = getattr(param_type, params[param])
-                
-        return cls(** kwargs)
-
-    def __init__(self, *args, **kwargs):
-        #Get all inherited params
-        def_params = type(self)._g_all_params()
+            elif    def_type   == MY_CLASS          :
+                recursive_params[param] = cls
+            elif    issubclass(def_type, EasyObj)   :
+                recursive_params[param] = def_type
         
-        #Extra params check
-        if len(args) > len(def_params):
-            extra_params = ['Param at postition '+ str(i+1) for i in range(len(def_params), len(args))]
-            raise ExceptionKwargs(self, extra_params, InfoExceptionType.EXTRA, def_params)
+        return recursive_params 
+    @classmethod
+    def _g_param_value      (
+        cls             ,
+        param           ,
+        value           ,
+        def_params      ,
+        recursive_params):
+        def_type            = def_params[param].get('type')
+        parser              = def_params[param].get('parser')
+        adapter             = def_params[param].get('adapter')
+        param_value         = value
 
-        #Check for params appearing twice
-        params_args     = {
-            list(def_params.keys())[i] : args[i] for i in range(len(args))}
-        twice_params    = [kwarg for kwarg in kwargs if kwarg in params_args]
-        if twice_params:
-            raise ExceptionKwargs(self, twice_params, InfoExceptionType.PROVIDED_TWICE, def_params)
-        
-        params  = kwargs
-        params.update(params_args)
-
-        default_params = {
-            x:def_params[x]['default'] for x in def_params \
-                if 'default' in def_params[x] and x not in params}
-        params.update(default_params)
-
-        extra_params    = [k for k in params if k not in def_params] 
-        if  extra_params     :
-            raise ExceptionKwargs(self, extra_params, InfoExceptionType.EXTRA, def_params)
-
-        missing_params  = [k for k in def_params if k not in params] 
-        if  missing_params   :
-            raise ExceptionKwargs(self, missing_params, InfoExceptionType.MISSING, def_params)
-
-        for param in params :
-            if  'adapter' in def_params[param]:
-                value = def_params[param]['adapter'](params[param])
-            else :
-                value = params[param]
-            
-            param_type  = def_params[param].get('type')
-            if  param_type:
-                #Check if list and all elements are of the correct type
-                if      isinstance(value, list):
-                    for i in range(len(value)):
-                        if      not issubclass(type(value[i]), param_type) :
-                            raise ExceptionWrongType(
-                            '{} postion {}'.format(param, i)    ,
-                            param_type                          ,
-                            type(value[i])                      )
-                elif    not issubclass(type(value), param_type) :
-                    raise ExceptionWrongType(
+        if      value == None                       :
+            param_value = value
+        elif    not def_type                        :
+            param_value = value
+        elif    isinstance(value, list)         and \
+                def_type != list                    :
+                param_value = [
+                    cls._g_param_value(param, x, def_params, recursive_params) for x in value]
+        elif    issubclass(def_type, Enum)          :
+            if      isinstance(value, Enum) :
+                param_value = value
+            elif    isinstance(value, str)  :
+                param_value = getattr(def_type, value)
+            else                            :
+                raise ExceptionWrongType(
+                        cls         ,
                         param       ,
-                        param_type  ,
-                        type(value) )
-                
-            setattr(self, param, value)
+                        def_type    ,
+                        type(value) ,
+                        value       )
+        elif    param in recursive_params           :
+            if      type(value) == def_type     :
+                param_value = value
+            elif    isinstance(value, dict)     :
+                param_value = def_type(**value)
+            else                                :
+                param_value = def_type(value)
+        elif    parser and isinstance(value, str)   :
+            param_value = parser(value)
+        elif    issubclass(type(value), def_type)   :
+            param_value = value
+        else                                        :
+            raise ExceptionWrongType(
+                        cls         ,
+                        param       ,
+                        def_type    ,
+                        type(value) ,
+                        value       )
+        
+        return adapter(param_value) if adapter else param_value
+    
+    def __init__(self, *args, **kwargs):
+        my_type             = type(self)
+        #Get all inherited params
+        def_params          = my_type._g_all_params()
+        #Checks values params 
+        params              = my_type._g_all_values(self, args, kwargs, def_params)
+        #Get EasyObj params
+        recursive_params    = my_type._g_recursive_params(def_params)
 
-    def __str__(self, inline= True):
+        for param in params :    
+            setattr(self, param, my_type._g_param_value(param, params[param], def_params, recursive_params))
+        
+        self._on_init()
+
+    def __str__(self):
         '''Gets an str for the attributes.
 
             A string representation for the object attributes.\
             
-            Args:
-                inline  (bool   ): If true, returns a one line string, else a multiline string.
-
             Returns:
                 str : An str with the attributes and their values
         '''
-        return (', ' if inline else '\n').join(['{}: {}'.format(x, getattr(self, x)) for x in self.EasyObj_PARAMS])
+        def g_vars(obj):
+            vars_dict    = {}
+            for param in type(obj)._g_all_params():
+                value   = getattr(obj, param)
+                if      hasattr(value, 'EasyObj_PARAMS'):
+                    vars_dict[param] = g_vars(value)
+                else                                    :
+                    vars_dict[param] = value
+            return vars_dict
+
+        return pformat(g_vars(self))
     
     def __repr__(self):
         return str(self)
+    
+    def _on_init(self):
+        '''Executed after `__init___`.
+
+        '''
+        pass

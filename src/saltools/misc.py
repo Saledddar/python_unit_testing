@@ -16,18 +16,17 @@ def join_string_array(
         Joins an iterable of strings omiting empty strings.
 
         Args:
-            str_iterable(Iterable: str  ): Description of arg1
-            delimiter   (str            ): Description of arg2
+            str_iterable(Iterable: str  ): The strings to join.
+            delimiter   (str            ): Character used to join. 
 
         Returns:
             bool    : Description of return value
     '''
     return delimiter.join([ x.strip() for x in str_iterable if x.strip() != ''])
-
 @handle_exception(
     level   = Level.ERROR  , 
     log     = False         )
-def dict_path(
+def g_dict_path(
     nested_dict , 
     path        ):
     '''Gets a value from a nested dict.
@@ -35,14 +34,14 @@ def dict_path(
         Gets the value specified by path from the nested dict.
         
         Args:
-            nested_dict (dict)           : A python dict.
-            path        (Iterable: str  ): An iterable if keys.
-            
+            nested_dict (dict                   ): A python dict.
+            path        (Iterable: str  | str   ): An iterable of keys or a path string as `a.b.c`.
+
         Returns:
             Object : The value at nested_dict[path[0]][path[1]] ...
     '''
+    path    = path if isinstance(path, list) else path.split('.')
     return reduce(getitem, path, nested_dict)
-
 @handle_exception(
     level   = Level.ERROR   , 
     log     = False         )
@@ -59,7 +58,6 @@ def g_safe(
         Returns : The value if found else None.
     '''
     return array_or_dict[key]
-
 @handle_exception()
 def print_progress(
     current             , 
@@ -92,5 +90,4 @@ def print_progress(
     
     if current == total :
         print('\n')
-
         

@@ -81,5 +81,5 @@ def find_xpath(element, xpath):
         result = fromstring(element).xpath(xpath)
     #Else, evaluate the expression
     else :
-        result = fromstring(lxml.etree.tostring(element)).xpath(xpath)
+        result = element.xpath(xpath)
     return result

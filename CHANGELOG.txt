@@ -1,6 +1,14 @@
 0.1.3
     - Fix:
-        - common.EasyObj            : - _g_from_dict resolving inherited params.
+        - common.EasyObj            : - Accept None for typed arguments.
+        - web.find_xpath            : - Xpath fixed for lxml.html.HtmlElement.
+    - EDT:
+        - misc.g_dict_path          : - Renamed from dict_path. 
+        - common.EasyObj            : - g_from_dict removed, EasyObj now will parse dicts from __init__.
+    - NEW:
+        - logging.handle_exception  : - Params_start, what parameters to print on start.
+        - misc.g_dict_path          : - Now accepts path strings, path.to.value is same as ['path', 'to', 'value'].   
+        - common.EasyObj            : - Can now parse list of strings for typed params.  
 ------------------------------------------------------------------------------------------------------------------------
 0.1.2
     - FIX: 
