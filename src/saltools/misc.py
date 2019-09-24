@@ -7,59 +7,7 @@ from    .logging        import  handle_exception, Level
 from    operator        import  getitem
 from    functools       import  reduce
 
-@handle_exception()
-def join_string_array(
-    str_iterable        , 
-    delimiter= ', '     ):
-    '''Joins an iterable of strings.
-
-        Joins an iterable of strings omiting empty strings.
-
-        Args:
-            str_iterable(Iterable: str  ): The strings to join.
-            delimiter   (str            ): Character used to join. 
-
-        Returns:
-            bool    : Description of return value
-    '''
-    return delimiter.join([ x.strip() for x in str_iterable if x.strip() != ''])
-@handle_exception(
-    level   = Level.ERROR  , 
-    log     = False         )
-def g_dict_path(
-    nested_dict , 
-    path        ):
-    '''Gets a value from a nested dict.
-        
-        Gets the value specified by path from the nested dict.
-        
-        Args:
-            nested_dict (dict                   ): A python dict.
-            path        (Iterable: str  | str   ): An iterable of keys or a path string as `a.b.c`.
-
-        Returns:
-            Object : The value at nested_dict[path[0]][path[1]] ...
-    '''
-    path    = path if isinstance(path, list) else path.split('.')
-    return reduce(getitem, path, nested_dict)
-@handle_exception(
-    level   = Level.ERROR   , 
-    log     = False         )
-def g_safe(
-    array_or_dict   , 
-    key             ):
-    '''Checks if key is in Iterable.
-
-        Gets an element from a dict or an array, return None if the key is not found or out of range.
-        
-        Args:
-            array_or_dict   : The array or dict to look into.
-            key             : The key to look for.
-        Returns : The value if found else None.
-    '''
-    return array_or_dict[key]
-@handle_exception()
-def print_progress(
+def print_progress      (
     current             , 
     total               , 
     message             ,
@@ -89,5 +37,60 @@ def print_progress(
     print(progress_str, end='\r')
     
     if current == total :
-        print('\n')
+        print('\n')    
+def join_string_array   (
+    str_iterable        , 
+    delimiter= ', '     ):
+    '''Joins an iterable of strings.
+
+        Joins an iterable of strings omiting empty strings.
+
+        Args:
+            str_iterable(Iterable: str  ): The strings to join.
+            delimiter   (str            ): Character used to join. 
+
+        Returns:
+            bool    : Description of return value
+    '''
+    return delimiter.join([ x.strip() for x in str_iterable if x.strip() != ''])
+
+@handle_exception   (
+    level   = Level.ERROR  , 
+    log     = False         )
+def g_dict_path     (
+    nested_dict , 
+    path        ):
+    '''Gets a value from a nested dict.
         
+        Gets the value specified by path from the nested dict, return `None` on expections.
+        
+        Args:
+            nested_dict (dict                   ): A python dict.
+            path        (Iterable: str  | str   ): An iterable of keys or a path string as `a.b.c`.
+
+        Returns:
+            Object : The value at nested_dict[path[0]][path[1]] ...
+    '''
+    path    = path if isinstance(path, list) else path.split('.')
+    return reduce(getitem, path, nested_dict)
+@handle_exception   (
+    level   = Level.ERROR   , 
+    log     = False         )
+def g_safe          (
+    array_or_dict           , 
+    key             = 0     ,
+    field           = None  ):
+    '''Checks if key is in Iterable.
+
+        Gets an element from a dict or an array, return None if the key is not found or out of range.
+        
+        Args:
+            array_or_dict   (dict           ): The array or dict to look into.
+            key             (object : 0     ): The key to look for.
+            field           (str    : None  ): If provided, all object in the list with an attribute `field`
+                and value `key` will be returned, `obj.field == key`.
+        Returns : The value if found else None.
+    '''
+    if      field   :
+        return [x for x in array_or_dict if getattr(x, field)== key]
+    return array_or_dict[key]

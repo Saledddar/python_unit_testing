@@ -1,5 +1,20 @@
+0.1.5
+    
+------------------------------------------------------------------------------------------------------------------------
+0.1.4
+    - EDT:
+        - misc.g_safe               : - Default value for key : 0. 
+        - logging                   : - MAIN_LOGGER set to ConsoleLogger by default.
+    - NEW:
+        - files.g_filders           : - Gets all files and/or folders matching a regex.
+        - misc.g_safe               : - Added option to filter objects in a list.
+        - logging.set_main_logger   : - Added new features for starting/stopping loggers.
+        - logging.DummyLogger       : - Used to eliminate the need for null checking when using MAIL_LOGGER.
+        - autoreload                : - A tool for automatic reloading of updated modules in real time.
+
+------------------------------------------------------------------------------------------------------------------------
 0.1.3
-    - Fix:
+    - FIX:
         - common.EasyObj            : - Accept None for typed arguments.
         - web.find_xpath            : - Xpath fixed for lxml.html.HtmlElement.
     - EDT:

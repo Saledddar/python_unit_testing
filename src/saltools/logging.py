@@ -136,6 +136,7 @@ from    sqlalchemy.exc              import  OperationalError
 from    sqlalchemy.orm              import  sessionmaker
 from    functools                   import  wraps   , reduce
 from    collections                 import  OrderedDict
+from    collections.abc             import  Callable
 from    datetime                    import  datetime
 from    threading                   import  Thread
 from    enum                        import  Enum
@@ -167,7 +168,7 @@ class Level(Enum):
 class Logger            (EasyObj        ):
     '''Logger base.
         
-        All derived must override on_init and execute_log.
+        All derived must override execute_log.
         
         Args:
             logger_id   (str)   : The id of the logger, must be unique when running multiple loggers.
@@ -176,8 +177,7 @@ class Logger            (EasyObj        ):
     
     LIVE_LOGGERS    = []
     EasyObj_PARAMS          = OrderedDict((
-        ('logger_id' , {'default': 'sal-logger' }   ),
-        ('print_log' , {'default': True         }   )))
+        ('logger_id' , {'default': 'sal-logger' }   ),))
     
     
     def __init__(self, *args, **kwargs):
@@ -188,8 +188,6 @@ class Logger            (EasyObj        ):
 
         for level in Level :
             setattr(self, level.name.lower(), lambda x, l= level: self.log(l, x))
-
-        self.on_init()
 
     def __enter__(self):
         self.start()
@@ -285,15 +283,6 @@ class Logger            (EasyObj        ):
         for logger in Logger.LIVE_LOGGERS.copy():
             logger.stop()
 
-    def on_init(self):
-        '''To be executed when a logger is created.
-
-            Will be executed in ``__init__``, contains logic to 
-            set up the environment for the logger.
-            Must be overridden by derived classes.
-        '''
-        raise NotImplementedError()
-
     def execute_log(
             self        , 
             level       , 
@@ -318,33 +307,40 @@ class ConsoleLogger     (Logger         ):
     '''Console logger.
         A simple console logger, prints the logs on console.
     '''
-
-    def on_init(self):
-        pass
-
+    EasyObj_PARAMS  = OrderedDict((
+        ('print_log', {'default': True }),
+        ('one_line' , {'default': True })))
     def execute_log(
             self        , 
             level       , 
             log_dict    ,
             log_datetime):
 
-        format_message  = lambda message: '\n'+ '\n'.join(textwrap.wrap(
-                    message                         , 
-                    subsequent_indent   = '\t\t'    , 
-                    initial_indent      = '\t\t'    , 
-                    width               = 100       , 
-                    break_on_hyphens    = True      )) 
+        if      self.one_line   :
+            dict_text   = '|'.join(['{}, {}'.format(k, v) for k, v in log_dict.items()])
+            text        = '[{}][{:<20}] [{:<8}]:{}'.format(
+                log_datetime                ,
+                self.logger_id              , 
+                level.name                  , 
+                dict_text                   )
+        else                    :
+            format_message  = lambda message: '\n'+ '\n'.join(textwrap.wrap(
+                        message                         , 
+                        subsequent_indent   = '\t\t'    , 
+                        initial_indent      = '\t\t'    , 
+                        width               = 100       , 
+                        break_on_hyphens    = True      )) 
 
-        dict_text   = '\n'.join(
-            ['\t{:<20}:{}'.format(
-                k,
-                format_message(str(v))) for k,v in log_dict.items()])
+            dict_text   = '\n'.join(
+                ['\t{:<20}:{}'.format(
+                    k,
+                    format_message(str(v))) for k,v in log_dict.items()])
 
-        text        = '[{}][{:<20}] [{:<8}]:\n{}'.format(
-            log_datetime                ,
-            self.logger_id              , 
-            level.name                  , 
-            dict_text                   )+'\n'+'='*116
+            text        = '[{}][{:<20}] [{:<8}]:\n{}'.format(
+                log_datetime                ,
+                self.logger_id              , 
+                level.name                  , 
+                dict_text                   )+'\n'+'='*120
 
         if self.print_log :
             print(text)
@@ -368,7 +364,7 @@ class FileLogger        (ConsoleLogger  ):
         ('root'     , {'default': '.'}  )))
     
 
-    def on_init(self):
+    def _on_init(self):
         logs_path   = os.path.join(self.root, self.logger_id)
         #Check and create the root directory
         if not os.path.isdir(logs_path):
@@ -439,7 +435,7 @@ class CsvLogger         (FileLogger     ):
                     level.name          ,
                     key                 ,
                     str(log_dict[key])  ] for key in log_dict])
-class SQLAlchemyLogger  (Logger         ):
+class SQLAlchemyLogger  (ConsoleLogger  ):
     '''SQLAlchemy File logger
         
         Dumps the logs to a database, the columns are the same as in the csv 
@@ -461,7 +457,7 @@ class SQLAlchemyLogger  (Logger         ):
         ('combine'  , {'default': False}),
         ('engine'   , {}                )))
 
-    def on_init(self):
+    def _on_init(self):
         base = declarative_base()
         self.tables = {}
                 
@@ -527,13 +523,27 @@ class SQLAlchemyLogger  (Logger         ):
             self.session.add(row)
         self.session.commit()
 
+class DummyLogger():
+    CALLABLES   =  [x for x in dir(Logger()) if             \
+                isinstance(getattr(Logger(), x), Callable)  ]
+
+    def __getattr__(self, name):
+        if      name in self.CALLABLES   :
+            return lambda *args, **kwargs: None             
+        else                        :
+            return None
+
 ############################################################
 #################### Exceptions
 ############################################################
 
-MAIN_LOGGER = None
+MAIN_LOGGER = DummyLogger() 
 
-def set_main_logger(logger):
+def set_main_logger(
+    logger          , 
+    erase   = False , 
+    stop    = True  , 
+    start   = True  ):
     '''Sets a global logger for all exceptions.
         
         Sets a global exception logger for all exceptions.
@@ -545,8 +555,15 @@ def set_main_logger(logger):
             logger  (Logger ): A Logger instance. 
     '''
     global MAIN_LOGGER
-    if not MAIN_LOGGER:
-        MAIN_LOGGER = logger
+    if      not (
+                isinstance(MAIN_LOGGER, DummyLogger) or\
+                erase                                   ):
+            return 
+    if      MAIN_LOGGER  and stop   :
+            MAIN_LOGGER.stop()
+    MAIN_LOGGER = logger
+    if      start                   :
+            MAIN_LOGGER.start()
 
 class ExceptionCritical(Exception):
     '''Raised on critical exceptions.
@@ -588,7 +605,7 @@ def handle_exception(
                 of success or failure.
             on_success      (collections.abc.Callable   : None              ): Executed only on success.
             on_failure      (collections.abc.Callable   : None              ): Excecuted only on failure.
-            log_params      (list, str                  : []                ): Parameters to log, if None: no parameters are 
+            log_params      (list, str                  : None              ): Parameters to log, if None: no parameters are 
                 logged, if empty list, all parameters are logged.
             log_start       (bool                       : False             ): Logs the function call before starting if set 
                 to True.
@@ -602,14 +619,14 @@ def handle_exception(
         def wrapper(*args, **kwargs):
             
             def do_log(l, d):
-                if not log:
+                if      not log     :
                     return 
-                if  logger:
+                if      logger      :
                     logger.log(l, d)
-                elif MAIN_LOGGER :
+                else                :
                     MAIN_LOGGER.log(l, d)
 
-            def g_params_dict(params_to_log):
+            def g_params_dict(log_params):
                 all_params  = inspect.signature(fn).parameters
                 params_dict = {}
 
@@ -621,8 +638,8 @@ def handle_exception(
                 for kwarg in kwargs         :
                     params_dict[kwarg]                          = kwargs[kwarg]
                 
-                if log_params != [] :
-                    params_dict = {x: params_dict[x] for x in log_params}
+                log_params  = log_params if log_params else params_dict
+                params_dict = {x: params_dict[x] for x in log_params}
 
                 return {'Parameter: {}'.format(param):  str(params_dict[param]) for param in params_dict}
                 
@@ -670,7 +687,7 @@ def handle_exception(
 
                     log_dict['attempt'] = n_attempt+ 1
 
-                    if log_params != []:
+                    if log_params != None:
                         log_dict.update(g_params_dict(log_params))
 
                     do_log(level, log_dict)
@@ -696,4 +713,3 @@ def handle_exception(
             return return_value
         return wrapper
     return _handle_exception
-

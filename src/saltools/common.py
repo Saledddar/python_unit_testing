@@ -60,7 +60,7 @@ MY_CLASS    = '''
     Just something to indicate that the type of the parameter is the same
         as the declaring class since the type cannot be used before is declared.
     '''
-
+ 
 class   InfoExceptionType   (Enum):
     PROVIDED_TWICE  = 1
     MISSING         = 2
@@ -256,6 +256,13 @@ class   EasyObj():
                 def_type != list                    :
                 param_value = [
                     cls._g_param_value(param, x, def_params, recursive_params) for x in value]
+        elif    param in recursive_params           :
+            if      type(value) == def_type     :
+                param_value = value
+            elif    isinstance(value, dict)     :
+                param_value = recursive_params[value](**value)
+            else                                :
+                param_value = recursive_params[value](value)
         elif    issubclass(def_type, Enum)          :
             if      isinstance(value, Enum) :
                 param_value = value
@@ -268,13 +275,6 @@ class   EasyObj():
                         def_type    ,
                         type(value) ,
                         value       )
-        elif    param in recursive_params           :
-            if      type(value) == def_type     :
-                param_value = value
-            elif    isinstance(value, dict)     :
-                param_value = def_type(**value)
-            else                                :
-                param_value = def_type(value)
         elif    parser and isinstance(value, str)   :
             param_value = parser(value)
         elif    issubclass(type(value), def_type)   :
