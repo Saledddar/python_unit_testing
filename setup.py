@@ -1,13 +1,14 @@
-from    setuptools  import setup    , find_packages
+from    setuptools  import  setup   , find_packages
+from    os.path     import  join    , dirname
 import  sys
-import  os
 
-README  = open('README.rst').read()
-REQS    = [line.strip() for line in open('requirements.txt').readlines() if line.strip()]
+BASE_DIR    = dirname(__file__)
+README      = open(join(BASE_DIR, 'README.rst')).read()
+REQS        = [line.strip() for line in open(join(BASE_DIR, 'requirements.txt')).readlines() if line.strip()]
 
 setup(
     name                            = 'saltools'                                ,
-    version                         = '0.1.4'                                   ,
+    version                         = '0.1.5'                                   ,
     description                     = 'Some usefull code'                       ,
     long_description                = README                                    ,
     long_description_content_type   = 'text/markdown'                           ,
