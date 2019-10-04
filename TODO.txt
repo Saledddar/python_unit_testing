@@ -1,6 +1,5 @@
-- improve str for easyobj when nested easyobj params.
+- autoreload    : Do not reload dependents if module failed to reload 
 - Add default params values to docs
-- one line logs to console logger
 - add tagless logs: logger.info('some info')
 - Lock output while printing to console
 - Auto clean log files after certain size

@@ -5,7 +5,7 @@ README = open('README.rst').read()
 
 setup(
     name                            = 'saltools'                                ,
-    version                         = '0.1.3'                                   ,
+    version                         = '0.1.4'                                   ,
     description                     = 'Some usefull code'                       ,
     long_description                = README                                    ,
     long_description_content_type   = 'text/markdown'                           ,
@@ -16,7 +16,7 @@ setup(
           'Operating System :: Microsoft :: Windows'                            ,
           'Programming Language :: Python'                                      ,
           'Topic :: Software Development :: Libraries'                          ],
-    keywords                        = 'logging exception'                       ,
+    keywords                        = 'logging exception scheduling generics '  ,
     author                          = 'saledddar'                               ,
     author_email                    = 'saledddar@gmail.com'                     ,
     url                             = 'https://github.com/Saledddar/saltools'   ,

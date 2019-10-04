@@ -131,7 +131,7 @@ class   ExceptionWrongType  (Exception):
 
     def __repr__(self):
         return str(self)
-
+ 
 class   EasyObj():
     '''Automatic attribute creation from params.
 
@@ -143,7 +143,7 @@ class   EasyObj():
     #Contains params and validators for creating the object, must be overridden
     #Must be an ordered dict.
     EasyObj_PARAMS  = OrderedDict()
-    
+
     @classmethod
     def _g_all_values       (
         cls         ,
@@ -224,8 +224,6 @@ class   EasyObj():
                 dict    : parameter name, parameter type object.
         '''
         recursive_params    = {}
-        def_params          = cls._g_all_params()
-
         for param in def_params :
             def_type = def_params[param].get('type')
             if      not def_type                    :
@@ -260,9 +258,9 @@ class   EasyObj():
             if      type(value) == def_type     :
                 param_value = value
             elif    isinstance(value, dict)     :
-                param_value = recursive_params[value](**value)
+                param_value = recursive_params[param](**value)
             else                                :
-                param_value = recursive_params[value](value)
+                param_value = recursive_params[param](value)
         elif    issubclass(def_type, Enum)          :
             if      isinstance(value, Enum) :
                 param_value = value
@@ -289,7 +287,10 @@ class   EasyObj():
         
         return adapter(param_value) if adapter else param_value
     
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self    , 
+        *args   , 
+        **kwargs):
         my_type             = type(self)
         #Get all inherited params
         def_params          = my_type._g_all_params()
@@ -301,9 +302,12 @@ class   EasyObj():
         for param in params :    
             setattr(self, param, my_type._g_param_value(param, params[param], def_params, recursive_params))
         
+        for base in list(reversed(getmro(my_type)))[:-1]    :
+            if      hasattr(base, '_on_init')   :
+                    base._on_init(self)
         self._on_init()
-
-    def __str__(self):
+    def __str__ (
+        self    ):
         '''Gets an str for the attributes.
 
             A string representation for the object attributes.\
@@ -311,22 +315,27 @@ class   EasyObj():
             Returns:
                 str : An str with the attributes and their values
         '''
-        def g_vars(obj):
+        def g_vars(obj, stack):
             vars_dict    = {}
             for param in type(obj)._g_all_params():
                 value   = getattr(obj, param)
                 if      hasattr(value, 'EasyObj_PARAMS'):
-                    vars_dict[param] = g_vars(value)
+                    if      value in stack  :
+                        vars_dict[param]    = '<EasyObj {}>'.format(id(value))
+                    else                    :
+                        stack.append(value)
+                        vars_dict[param] = g_vars(value, stack)
                 else                                    :
                     vars_dict[param] = value
             return vars_dict
 
-        return pformat(g_vars(self))
-    
-    def __repr__(self):
+        return pformat(g_vars(self, []))    
+    def __repr__(
+        self    ):
         return str(self)
-    
-    def _on_init(self):
+   
+    def _on_init(
+        self    ):
         '''Executed after `__init___`.
 
         '''

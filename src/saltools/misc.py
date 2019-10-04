@@ -2,10 +2,60 @@
 
     Module contains any function or feature that do not fall under a specific description.
 '''
+from    .common         import  EasyObj
+from    collections.abc import  Iterable
+from    collections     import  OrderedDict
+from    sqlalchemy      import  create_engine
+from    enum            import  Enum
 
-from    .logging        import  handle_exception, Level
-from    operator        import  getitem
-from    functools       import  reduce
+import  json
+import  os
+
+class ConfigType        (Enum):
+    JSON    = 0
+class DataBaseEngine    (Enum):
+    SQLITE      = 0
+    MSSQL       = 1
+    MYSQL       = 2
+    POSTGRESQL  = 3
+    ORACLE      = 4
+
+class SQLAlchemyEBuilder(EasyObj):
+    EasyObj_PARAMS  = OrderedDict((
+        ('db_engine', {
+            'default'   : DataBaseEngine.SQLite ,
+            'type'      : DataBaseEngine        },),
+        ('user'     , {
+            'default'   : 'root',
+            'type'      : str   },),
+        ('pwd'      , {
+            'default'   : ''    ,
+            'type'      : str   },),
+        ('host'     , {
+            'default'   : 'localhost'   ,
+            'type'      : str           },),
+        ('port'     , {
+            'default'   : '3306'    ,
+            'type'      : str       },),
+        ('db'       , {
+            'default'   : '//sqlite.db' ,
+            'type'      : str           },),))
+    
+    def _on_init(
+        self    ):
+        if      self.db_engine  == DataBaseEngine.SQLite    :
+            connection_str  = '{db_engine}://{db}'.format(
+                db_engine   = self.db_engine.name.lower()   ,
+                db          = self.db                       )
+        else                                                :
+            connection_str  = '{db_engine}://{user}:{pwd}@{host}:{port}/{database}'.format(
+                db_engine   = self.db_engine.name.lower()   ,
+                user        = self.user                     ,
+                pwd         = self.pwd                      ,
+                host        = self.host                     ,
+                port        = self.port                     ,
+                db          = self.db                       )
+        self.engine = create_engine(connection_str)
 
 def print_progress      (
     current             , 
@@ -53,44 +103,55 @@ def join_string_array   (
             bool    : Description of return value
     '''
     return delimiter.join([ x.strip() for x in str_iterable if x.strip() != ''])
-
-@handle_exception   (
-    level   = Level.ERROR  , 
-    log     = False         )
-def g_dict_path     (
-    nested_dict , 
-    path        ):
+def getitem             (
+        obj , 
+        attr):
+        if      hasattr(obj, '__getitem__'):
+            return obj[attr]
+        else                                :
+            return getattr(obj, attr)
+def g_path              (
+    obj                     , 
+    path            = 0     ,
+    default_value   = None  ,
+    path_sep        = '.'   ,
+    return_last     = True  ):
     '''Gets a value from a nested dict.
         
         Gets the value specified by path from the nested dict, return `None` on expections.
         
         Args:
-            nested_dict (dict                   ): A python dict.
-            path        (Iterable: str  | str   ): An iterable of keys or a path string as `a.b.c`.
+            obj     (dict                   ): A python dict.
+            path    (Iterable: str  | str   ): An iterable of keys or a path string as `a.b.c`.
 
         Returns:
             Object : The value at nested_dict[path[0]][path[1]] ...
     '''
-    path    = path if isinstance(path, list) else path.split('.')
-    return reduce(getitem, path, nested_dict)
-@handle_exception   (
-    level   = Level.ERROR   , 
-    log     = False         )
-def g_safe          (
-    array_or_dict           , 
-    key             = 0     ,
-    field           = None  ):
-    '''Checks if key is in Iterable.
-
-        Gets an element from a dict or an array, return None if the key is not found or out of range.
+    if      isinstance(path, str)   :
+        path    = path.split(path_sep)
+    if      not isinstance(path, Iterable)  :
+        path    = [path]
+      
+    for attr in path   :
+        try :
+            obj   = getitem(obj, attr)
+        except  :
+            return default_value if default_value else obj if return_last else None
+    return obj
+def g_config            (
+    path        = 'config.json' ,
+    config_type = None          ):
+    if      not config_type                 :
+        extension   = os.path.splitext(path)[-1].replace('.', '')
+        config_type = g_path(
+            ConfigType          , 
+            extension.upper()   ,
+            ConfigType.JSON     )
+    if      not os.path.exists(path)        :
+        return {}
+    if      config_type == ConfigType.JSON  :
+        with open(path) as f :
+            config = json.load(f)
+    
+    return config
         
-        Args:
-            array_or_dict   (dict           ): The array or dict to look into.
-            key             (object : 0     ): The key to look for.
-            field           (str    : None  ): If provided, all object in the list with an attribute `field`
-                and value `key` will be returned, `obj.field == key`.
-        Returns : The value if found else None.
-    '''
-    if      field   :
-        return [x for x in array_or_dict if getattr(x, field)== key]
-    return array_or_dict[key]

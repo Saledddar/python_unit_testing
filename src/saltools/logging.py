@@ -142,6 +142,7 @@ from    threading                   import  Thread
 from    enum                        import  Enum
 
 from    .common                     import  EasyObj
+from    .misc                       import  SQLAlchemyEBuilder  , g_path
 
 import  traceback
 import  textwrap
@@ -165,42 +166,51 @@ class Level(Enum):
     ERROR       = 4
     CRITICAL    = 5
 
-class Logger            (EasyObj        ):
+class Logger        (EasyObj        ):
     '''Logger base.
         
         All derived must override execute_log.
         
         Args:
-            logger_id   (str)   : The id of the logger, must be unique when running multiple loggers.
+            _id         (str)   : The id of the logger, must be unique when running multiple loggers.
             print_log   (bool)  : Prints the log on the console if True.
     '''
     
     LIVE_LOGGERS    = []
     EasyObj_PARAMS          = OrderedDict((
-        ('logger_id' , {'default': 'sal-logger' }   ),))
+        ('_id' , {
+            'default': 'sal-logger' },),))
     
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        
-        self.queue  = queue.Queue()
-        self.alive  = False
+    @staticmethod
+    @atexit.register
+    def stop_all():
+        '''Stop all live loggers.
 
-        for level in Level :
-            setattr(self, level.name.lower(), lambda x, l= level: self.log(l, x))
-
-    def __enter__(self):
+            Stops all loggers regestered at LIVE_LOGGERS
+        '''
+        for logger in Logger.LIVE_LOGGERS.copy():
+            logger.stop()
+      
+    def __enter__   (self):
         self.start()
         return self
-
-    def __exit__(
+    def __exit__    (
         self        , 
         type        , 
         value       , 
         traceback   ):
         self.stop()
 
-    def loop(self):
+    def _on_init(
+        self    ):
+        self.queue      = queue.Queue()
+        self.is_alive   = False
+
+        for level in Level :
+            setattr(self, level.name.lower(), lambda x, l= level: self.log(l, x))
+    
+    def loop        (
+        self    ):
         '''Logging loop.
 
             Keeps looping!
@@ -216,8 +226,7 @@ class Logger            (EasyObj        ):
             level       = Level.INFO                                                ,
             log_dict    = {'Logger stopped': 'Logger stopped!'} ,
             log_datetime= datetime.now().isoformat())
-
-    def log(
+    def log         (
         self        ,      
         level       , 
         log_dict    ):
@@ -234,16 +243,19 @@ class Logger            (EasyObj        ):
                 level                       ,
                 log_dict                    ,
                 datetime.now().isoformat()  ])
-
-    def start(self):
+    def start       (
+        self    ):
         '''Start loging.
         
             Starts the logging thread (self.loop)
         '''
-        if self.alive:
+        if self.is_alive:
             return 
-        self.alive = True
-        self.thread = Thread(target= self.loop, daemon= True) 
+        self.is_alive = True
+        self.thread = Thread(
+            name    = self._id  , 
+            target  = self.loop , 
+            daemon  = True      ) 
         self.thread.start()
 
         self.log(
@@ -252,13 +264,13 @@ class Logger            (EasyObj        ):
         
         if self not in Logger.LIVE_LOGGERS:
             Logger.LIVE_LOGGERS.append(self)
-
-    def stop(self):
+    def stop        (
+        self    ):
         '''Stop!
 
             No more trees are cut, Saving the planet!.
         '''
-        if not self.alive:
+        if not self.is_alive:
             return 
 
         self.log(
@@ -268,22 +280,11 @@ class Logger            (EasyObj        ):
         #Wait for the logger to log the remaining logs
         self.queue.put('EXIT_LOGGER_SIGNAL')
         self.thread.join()
-        self.alive  = False 
+        self.is_alive  = False 
 
         if self in Logger.LIVE_LOGGERS:
             Logger.LIVE_LOGGERS.remove(self)
-    
-    @staticmethod
-    @atexit.register
-    def stop_all():
-        '''Stop all live loggers.
-
-            Stops all loggers regestered at LIVE_LOGGERS
-        '''
-        for logger in Logger.LIVE_LOGGERS.copy():
-            logger.stop()
-
-    def execute_log(
+    def execute_log (
             self        , 
             level       , 
             log_dict    ,
@@ -303,7 +304,7 @@ class Logger            (EasyObj        ):
                 str         : The log string or None.
         '''
         raise NotImplementedError()
-class ConsoleLogger     (Logger         ):
+class ConsoleLogger (Logger         ):
     '''Console logger.
         A simple console logger, prints the logs on console.
     '''
@@ -320,7 +321,7 @@ class ConsoleLogger     (Logger         ):
             dict_text   = '|'.join(['{}, {}'.format(k, v) for k, v in log_dict.items()])
             text        = '[{}][{:<20}] [{:<8}]:{}'.format(
                 log_datetime                ,
-                self.logger_id              , 
+                self._id              , 
                 level.name                  , 
                 dict_text                   )
         else                    :
@@ -338,7 +339,7 @@ class ConsoleLogger     (Logger         ):
 
             text        = '[{}][{:<20}] [{:<8}]:\n{}'.format(
                 log_datetime                ,
-                self.logger_id              , 
+                self._id              , 
                 level.name                  , 
                 dict_text                   )+'\n'+'='*120
 
@@ -346,14 +347,14 @@ class ConsoleLogger     (Logger         ):
             print(text)
 
         return text
-class FileLogger        (ConsoleLogger  ):
+class FileLogger    (ConsoleLogger  ):
     '''Text file logger.
 
         Simple text file logger based on ``ConsoleLogger``, dumps the logs generated by ``ConsoleLogger`` to txt files.
 
         Args:
             root        (str    ): The root directory to save the logs, logs will be saved under 
-                                  root/logger_id.
+                                  root/_id.
             overwrite   (bool   ): If True, always erase previous logs on instance creation.
             combine     (bool   ): If True, all levels are combined in one file ``combined.log``.
     '''
@@ -365,7 +366,7 @@ class FileLogger        (ConsoleLogger  ):
     
 
     def _on_init(self):
-        logs_path   = os.path.join(self.root, self.logger_id)
+        logs_path   = os.path.join(self.root, self._id)
         #Check and create the root directory
         if not os.path.isdir(logs_path):
             os.makedirs(logs_path)
@@ -393,7 +394,7 @@ class FileLogger        (ConsoleLogger  ):
         '''
         return os.path.join(
             self.root                                           , 
-            self.logger_id                                      , 
+            self._id                                      , 
             ('combined' if self.combine else level.name)+ '.log')
 
     def execute_log(
@@ -409,7 +410,7 @@ class FileLogger        (ConsoleLogger  ):
         with open(self.g_path(level),'a') as f :
             f.write(text+'\n')
         return text
-class CsvLogger         (FileLogger     ):
+class CsvLogger     (FileLogger     ):
     '''Csv logger.
 
         Csv File logger.
@@ -431,11 +432,11 @@ class CsvLogger         (FileLogger     ):
             writer = csv.writer(f, lineterminator='\n')
             writer.writerows([[
                     log_datetime        ,
-                    self.logger_id      ,
+                    self._id      ,
                     level.name          ,
                     key                 ,
                     str(log_dict[key])  ] for key in log_dict])
-class SQLAlchemyLogger  (ConsoleLogger  ):
+class SQLLogger     (ConsoleLogger  ):
     '''SQLAlchemy File logger
         
         Dumps the logs to a database, the columns are the same as in the csv 
@@ -453,20 +454,24 @@ class SQLAlchemyLogger  (ConsoleLogger  ):
     '''
 
     EasyObj_PARAMS  = OrderedDict((
-        ('overwrite', {'default': False}),
-        ('combine'  , {'default': False}),
-        ('engine'   , {}                )))
+        ('overwrite'        , {'default': False},),
+        ('combine'          , {'default': False},),
+        ('engine_builder'   , {
+            'type'      : SQLAlchemyEBuilder    ,
+            'default'   : SQLAlchemyEBuilder()  },),))
 
     def _on_init(self):
+        super()._on_init()
+        self.engine = self.engine_builder.engine
         base = declarative_base()
         self.tables = {}
                 
         if self.combine:
             _class = type(
-                '{}_{}'.format(self.logger_id, 'combined')  ,
+                '{}_{}'.format(self._id, 'combined')  ,
                 (base,                                      ),
                 {   
-                    '__tablename__'   : '{}_{}'.format(self.logger_id, 'combined')    ,
+                    '__tablename__'   : '{}_{}'.format(self._id, 'combined')    ,
                     'id'              : Column(Integer, primary_key=True)             ,
                     'log_datetime'    : Column(String)                                ,
                     'level'           : Column(String)                                , 
@@ -477,10 +482,10 @@ class SQLAlchemyLogger  (ConsoleLogger  ):
         else:
             for level in Level :
                 _class = type(
-                    '{}_{}'.format(self.logger_id, level.name)  ,
+                    '{}_{}'.format(self._id, level.name)  ,
                     (base,                                      ),
                     {   
-                        '__tablename__'   : '{}_{}'.format(self.logger_id, level.name)    ,
+                        '__tablename__'   : '{}_{}'.format(self._id, level.name)    ,
                         'id'              : Column(Integer, primary_key=True)             ,
                         'log_datetime'    : Column(String)                                ,
                         'title'           : Column(String)                                ,        
@@ -523,7 +528,7 @@ class SQLAlchemyLogger  (ConsoleLogger  ):
             self.session.add(row)
         self.session.commit()
 
-class DummyLogger():
+class DummyLogger(EasyObj):
     CALLABLES   =  [x for x in dir(Logger()) if             \
                 isinstance(getattr(Logger(), x), Callable)  ]
 
@@ -578,18 +583,19 @@ class ExceptionCritical(Exception):
 
 def handle_exception(
     level           = Level.CRITICAL,
-    log             = True          ,
+    is_log          = True          ,
     logger          = None          ,
-    fall_back_value = None          ,
+    default_value   = None          ,
     before          = None          ,
     after           = None          ,
     on_success      = None          ,
     on_failure      = None          ,
-    log_params      = []            ,
-    log_start       = False         ,
-    log_end         = False         ,
+    params_exc      = []            ,
+    is_log_start    = False         ,
+    is_log_end      = False         ,
     params_start    = []            ,
-    attempts        = 1             ):
+    attempts        = 1             ,
+    class_logger    = 'logger'      ):
     '''Wrapper for exception handling.
 
         An exception handling wrapper(decorator).
@@ -597,36 +603,40 @@ def handle_exception(
         Args:
             level           (Level                      : Level.CRITICAL    ): The logging level when an exception occurs, 
                 if set to critical, the exception is also raised.
-            log             (bool                       : True              ): If set to false, no logging is done.
+            is_log          (bool                       : True              ): If set to false, no logging is done.
             logger          (Logger                     : None              ): Used to log the traceback.
-            fall_back_value (object                     : None              ): The value to return on exceptions.
+            default_value   (object                     : None              ): The value to return on exceptions.
             before          (collections.abc.Callable   : None              ): Executed before the function call.
             after           (collections.abc.Callable   : None              ): Excecuted after the function call regardless 
                 of success or failure.
             on_success      (collections.abc.Callable   : None              ): Executed only on success.
             on_failure      (collections.abc.Callable   : None              ): Excecuted only on failure.
-            log_params      (list, str                  : None              ): Parameters to log, if None: no parameters are 
+            params_exc      (list, str                  : None              ): Parameters to log, if None: no parameters are 
                 logged, if empty list, all parameters are logged.
-            log_start       (bool                       : False             ): Logs the function call before starting if set 
+            is_log_start    (bool                       : False             ): Logs the function call before starting if set 
                 to True.
-            log_end         (bool                       : False             ): Logs the execution termination if set to True.
+            is_log_end      (bool                       : False             ): Logs the execution termination if set to True.
             params_start    (list, str                  : []                ): Logs params on start.
             attempts        (int                        : 1                 ): Number of repeated attempts in case of exceptions, 
                 0 for an infinite loop. 
+            class_logger    (str                        : 'logger'          ): Try to use self.<class_logger> if fn is a method.
     '''
     def _handle_exception(fn):
         @wraps(fn)
         def wrapper(*args, **kwargs):
             
             def do_log(l, d):
-                if      not log     :
+                if      not is_log                          :
                     return 
-                if      logger      :
+                elif    logger                              :
                     logger.log(l, d)
-                else                :
+                elif    class_logger != None                \
+                        and hasattr(args[0], class_logger)  :
+                    getattr(args[0], class_logger).log(l, d)
+                else                                        :
                     MAIN_LOGGER.log(l, d)
 
-            def g_params_dict(log_params):
+            def g_params_dict(params_to_log):
                 all_params  = inspect.signature(fn).parameters
                 params_dict = {}
 
@@ -638,13 +648,13 @@ def handle_exception(
                 for kwarg in kwargs         :
                     params_dict[kwarg]                          = kwargs[kwarg]
                 
-                log_params  = log_params if log_params else params_dict
-                params_dict = {x: params_dict[x] for x in log_params}
+                params_to_log  = params_to_log if params_to_log else params_dict
+                params_dict = {x: g_path(params_dict,x) for x in params_to_log}
 
                 return {'Parameter: {}'.format(param):  str(params_dict[param]) for param in params_dict}
                 
             #Set execution result to fall back value
-            return_value = fall_back_value
+            return_value = default_value
 
             name        = '{}.{}'.format(fn.__module__, fn.__qualname__)
 
@@ -654,9 +664,9 @@ def handle_exception(
 
             n_attempt   = 0
             while attempts == 0 or n_attempt < attempts :
-                if log_start:
+                if is_log_start:
                     start_dict = {'Started {}'.format(n_attempt+ 1): name}
-                    if params_start :
+                    if params_start != None:
                         start_dict.update(g_params_dict(params_start))
                     do_log(Level.INFO  , start_dict)
                 try :
@@ -677,7 +687,8 @@ def handle_exception(
                             'Type'      : exc_type.__name__                     ,
                             'Line'      : tb.lineno                             ,
                             'Code'      : tb.line                               ,
-                            'Msg'       : exc_obj.args[0]                       }
+                            'Msg'       : exc_obj.args[0] if len(exc_obj.args)  \
+                                            else ''                             }
                     else :
                         exc_crt     = exc_obj
                         log_dict    = {
@@ -687,8 +698,8 @@ def handle_exception(
 
                     log_dict['attempt'] = n_attempt+ 1
 
-                    if log_params != None:
-                        log_dict.update(g_params_dict(log_params))
+                    if params_exc != None:
+                        log_dict.update(g_params_dict(params_exc))
 
                     do_log(level, log_dict)
 
@@ -700,7 +711,7 @@ def handle_exception(
                     if level == level.CRITICAL:
                         raise exc_crt
                 else :
-                    if log_end:
+                    if is_log_end:
                         do_log(Level.INFO  ,{'Finished': name})
                     if on_success :
                         on_success()
