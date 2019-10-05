@@ -251,7 +251,6 @@ class NiceFactory(EasyObj):
         is_log_end      = True  )
     def _manager_loop       (
         self    ):
-        print(self.state)
         while   self.state not in [
             State.STOPPING  ,
             State.IDLE      ]:

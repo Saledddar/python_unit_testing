@@ -1,6 +1,7 @@
-- autoreload    : Do not reload dependents if module failed to reload 
+- schedule  : add weekday to time
+- reload    : Do not reload dependents if module failed to reload 
 - Add default params values to docs
-- add tagless logs: logger.info('some info')
+- add tag-less logs: logger.info('some info')
 - Lock output while printing to console
 - Auto clean log files after certain size
 - If statement padding

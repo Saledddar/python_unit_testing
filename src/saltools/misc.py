@@ -23,7 +23,7 @@ class DataBaseEngine    (Enum):
 class SQLAlchemyEBuilder(EasyObj):
     EasyObj_PARAMS  = OrderedDict((
         ('db_engine', {
-            'default'   : DataBaseEngine.SQLite ,
+            'default'   : DataBaseEngine.SQLITE ,
             'type'      : DataBaseEngine        },),
         ('user'     , {
             'default'   : 'root',
@@ -43,7 +43,7 @@ class SQLAlchemyEBuilder(EasyObj):
     
     def _on_init(
         self    ):
-        if      self.db_engine  == DataBaseEngine.SQLite    :
+        if      self.db_engine  == DataBaseEngine.SQLITE    :
             connection_str  = '{db_engine}://{db}'.format(
                 db_engine   = self.db_engine.name.lower()   ,
                 db          = self.db                       )
@@ -136,7 +136,7 @@ def g_path              (
         try :
             obj   = getitem(obj, attr)
         except  :
-            return default_value if default_value else obj if return_last else None
+            return default_value if default_value != None else obj if return_last else None
     return obj
 def g_config            (
     path        = 'config.json' ,

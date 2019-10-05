@@ -13,13 +13,17 @@ from    collections.abc         import  Callable
 from    .                       import  parallel    as stp
 from    .                       import  common      as stc
 from    .                       import  logging     as stl
+from    .                       import  misc        as stm
 
 import  os
 
-class TimeType  (Enum):
+class TimeType      (Enum):
     OFFSET      = 0
     LAST_START  = 1
     LAST_STOP   = 2
+class TimeRangeType (Enum):
+    OK      = 0
+    NOT_OK  = 1
 
 class ScheduledTask (stp.FactoryTask):
     EasyObj_PARAMS  = OrderedDict((
@@ -116,6 +120,51 @@ class Time      (stl.EasyObj):
             return self._g_next_relative(current_dt, last_start)
         elif    self.type == TimeType.LAST_STOP :
             return self._g_next_relative(current_dt, last_stop)
+class TimeRange (stl.EasyObj):
+    EasyObj_PARAMS  = OrderedDict((
+        ('is_ok'    , {
+            'default'   : True  ,
+            'type'      : bool  }),
+        ('second'   , {
+            'default'   : [0,30]    ,
+            'type'      : int       }),
+        ('minute'   , {
+            'default'   : None  ,
+            'type'      : int   }),
+        ('hour'     , {
+            'default'   : None  ,
+            'type'      : int   }),
+        ('day'      , {
+            'default'   : None  ,
+            'type'      : int   }),
+        ('month'    , {
+            'default'   : None  ,
+            'type'      : int   }),
+        ('weekday'      , {
+            'default'   : None  ,
+            'type'      : int   },),))
+        
+    def __contains__(
+        self        , 
+        date        ):
+        for time_unit in self.EasyObj_PARAMS.keys():
+            unit_range  = getattr(self, time_unit)
+            if      time_unit == 'is_ok'                \
+                    or unit_range == None               :
+                continue
+            if      time_unit == 'weekday'              :
+                value   = date.weekday()
+            else                                        :
+                value   = getattr(date, time_unit)
+            if      not isinstance(unit_range, list)    \
+                    or  len(unit_range) == 1            :
+                    is_in_range     = value == stm.g_path(unit_range , 0)
+            else                                        :
+                    is_in_range = unit_range[0] <= value and unit_range[1] >= value
+            if      self.is_ok and not is_in_range      \
+                    or not self.is_ok and is_in_range   :
+                    return False
+        return True
 class Schedule  (stl.EasyObj):
     EasyObj_PARAMS  = OrderedDict((
         ('tasks'        , {
@@ -126,12 +175,22 @@ class Schedule  (stl.EasyObj):
             'parser'    : date_parse    }),
         ('times'        , {
             'default'   : [Time()]          ,
-            'type'      : Time              }),))
+            'type'      : Time              }),
+        ('ranges'       , {
+            'default'   : []                ,
+            'type'      : TimeRange         }),))
 
-    def _on_init(
+    def _on_init        (
         self    ):
         self.consumed_dates = []
-        
+    def _does_in_ranges (
+        self    ,
+        date    ):
+        for range_ in self.ranges :
+            if      date not in range_  :
+                return False 
+        return True
+    
     def g_next_times(
         self        , 
         current_dt  ):
@@ -144,10 +203,13 @@ class Schedule  (stl.EasyObj):
                     current_dt      , 
                     task.last_start ,
                     task.last_stop  ) 
-                if      next_time    :
+                if      next_time                           \
+                        and self._does_in_ranges(next_time) :
                     task.next_times.append(next_time)
             for date in self.dates  :
-                if current_dt > date and date not in self.consumed_dates:
+                if      current_dt > date                   \
+                        and date not in self.consumed_dates \
+                        and self._does_in_ranges(date)      :
                     self.consumed_dates.append(date)
                     task.next_times.append(date)
         return self.tasks

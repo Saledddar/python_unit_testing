@@ -1,36 +1,5 @@
-0.1.4
-    - DEL:
-        - misc.g_safe               : - Removed, g_path can be used instead. 
-    - EDT:
-        - logging                   : - MAIN_LOGGER set to ConsoleLogger by default.
-        - misc.g_dict_path          : - Renamed to g_path.
-    - NEW:
-        - files.g_filders           : - Gets all files and/or folders matching a regex.
-        - logging.set_main_logger   : - Added new features for starting/stopping loggers.
-        - logging.DummyLogger       : - Used to eliminate the need for null checking when using MAIL_LOGGER.
-        - reload                    : - A tool for automatic reloading of updated modules in real time.
-
-------------------------------------------------------------------------------------------------------------------------
-0.1.3
-    - FIX:
-        - common.EasyObj            : - Accept None for typed arguments.
-        - web.find_xpath            : - Xpath fixed for lxml.html.HtmlElement.
-    - EDT:
-        - misc.g_dict_path          : - Renamed from dict_path. 
-        - common.EasyObj            : - g_from_dict removed, EasyObj now will parse dicts from __init__.
-    - NEW:
-        - logging.handle_exception  : - Params_start, what parameters to print on start.
-        - misc.g_dict_path          : - Now accepts path strings, path.to.value is same as ['path', 'to', 'value'].   
-        - common.EasyObj            : - Can now parse list of strings for typed params.  
-------------------------------------------------------------------------------------------------------------------------
-0.1.2
-    - FIX: 
-        - logging.handle_exception  : - Exception line, line number and file.
-    - NEW:
-        - logging.handle_exception  : - Change the way args are logged on exceptions.
-                                      - Option to attempt decorated functions execution multiple times on failure. 
-        - common.EasyObj            : - Object creation from a dict of params. 
-                                      - Type checking for params.
-                                      - Support for lists in typed parameters.
-                                      - Support for string to enum conversion.
-                                      - Support for custom object parsers.
+0.2
+    NEW:    
+    EDT:
+    FIX:
+    DEL:
