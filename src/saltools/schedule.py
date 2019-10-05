@@ -107,7 +107,8 @@ class Time      (stl.EasyObj):
                 getattr(self, unit_name) != None                            \
                 else 0                                                      \
                 for unit_name, unit_default_value in self.DEFAULTS.items()  }
-        return last+ relativedelta(**kwargs)
+        next_time   = last+ relativedelta(**kwargs)
+        return next_time if next_time > current_dt else current_dt 
     
     def g_next_time(
         self        , 
@@ -168,6 +169,7 @@ class TimeRange (stl.EasyObj):
 class Schedule  (stl.EasyObj):
     EasyObj_PARAMS  = OrderedDict((
         ('tasks'        , {
+            'default'   : []            ,
             'type'      : ScheduledTask }),
         ('dates'        , {
             'default'   : []            ,
@@ -229,6 +231,7 @@ class Scheduler (stp.NiceFactory):
     def _on_init        (
         self    ):
         self.awaiting   = []
+        self.resting    = []
         self.manager    = self._g_pending
 
     def _g_next_times   (
@@ -248,21 +251,26 @@ class Scheduler (stp.NiceFactory):
                 self.state      ,
                 current_dt      ,
                 self.working    ,
-                self.awaiting   )
+                self.awaiting   ,
+                self.resting    )
     def _g_pending      (
         self    ):
         current_dt      = datetime.utcnow()
         self.pending    = [task for task, time in self.awaiting if current_dt>= time]
         self.awaiting   = []
-        
-        for task in self._g_next_times(current_dt)  :
+        self.resting    = []
+        tasks           = self._g_next_times(current_dt)
+
+        for task in   tasks :
             for time in task.next_times :
-                if      current_dt < time                   \
-                        and not (                           \
-                            not task.is_parallel            \
-                            and self.is_task_running(task)) :
+                print(time, current_dt, current_dt <= time)
+                if      current_dt <= time                      \
+                        and not (                               \
+                            not task.is_parallel                \
+                            and self.does_task_running(task))   :
                     self.awaiting.append([task, time])
-        
+        awaiting_tasks  = set([awaiting[0] for awaiting in self.awaiting])
+        self.resting    = [task for task in tasks if task not in awaiting_tasks] 
         self._report(current_dt)
         if      self.is_print_report    :
             os.system('clear')
@@ -275,6 +283,8 @@ class Scheduler (stp.NiceFactory):
         state       = self.state 
         running     = self.working
         awaiting    = self.awaiting
+        resting     = self.resting
+
         p_format = '\n'.join([
             '{state:<5}:{current_dt}'   ,
             'RUNNING'                   ,
@@ -285,10 +295,16 @@ class Scheduler (stp.NiceFactory):
             'AWAITING'                  ,
             '----------'                ,
             '{awaiting_hdr}'            ,
-            '{awaiting_str}'            ])
+            '{awaiting_str}'            ,
+            'RESTING'                   ,
+            '----------'                ,
+            '{resting_hdr}'             ,
+            '{resting_str}'             ])
+        
         a_format = '{t_id:<20}|{prl:<8}|{nxt:<26}|{rem:>25}|{lst:<26}|{lsp:<26}|{ls:<12}'
         ah_format= '{t_id:<20}|{prl:<8}|{nxt:<26}|{rem:<25}|{lst:<26}|{lsp:<26}|{ls:<12}'
         r_format = '{t_id:<20}|{prl:<8}|{lst:<26}|{_id}'
+        s_format = '{t_id:<20}|{prl:<8}|{lst:<26}|{lsp:<26}|{ls:<12}'
 
         g_rem   = lambda t, current_dt : str(t - current_dt)  
         awaiting_str    = '\n'.join([
@@ -308,6 +324,15 @@ class Scheduler (stp.NiceFactory):
                 prl     = str(d['task'].is_parallel),
                 lst     = d['start'].isoformat()    ,                          
                 _id     = _id                       ) for _id, d in running.items() ])
+        resting_str     = '\n'.join([
+            s_format.format(
+                t_id    = task._id                                  ,
+                prl     = str(task.is_parallel)                     ,
+                lst     = str(task.last_start)                      ,
+                lsp     = str(task.last_stop)                       ,
+                ls      = task.last_stop_status.name                \
+                    if task.last_stop_status != None else 'None'    )\
+                    for task in resting  ])
 
         awaiting_hdr    = ah_format.format(
             t_id    = 'TID'         , 
@@ -322,8 +347,15 @@ class Scheduler (stp.NiceFactory):
             prl     = 'PARALLEL'    , 
             lst     = 'LAST START'  , 
             _id     = 'ID'          )
+        resting_hdr     = s_format.format(
+            t_id    = 'TID'         , 
+            prl     = 'PARALLEL'    ,
+            lst     = 'LAST START'  , 
+            lsp     = 'LAST STOP'   , 
+            ls      = 'LAST STATUS' )
         awaiting_hdr    +='\n'+ '-'*len(awaiting_hdr)
         running_hdr     +='\n'+ '-'*len(running_hdr)
+        resting_hdr     +='\n'+ '-'*len(resting_hdr)
 
         return p_format.format(
             state       = state.name    ,
@@ -331,58 +363,6 @@ class Scheduler (stp.NiceFactory):
             running_hdr = running_hdr   ,
             running_str = running_str   ,
             awaiting_hdr= awaiting_hdr  ,
-            awaiting_str= awaiting_str  )
-    
-    
-def task_fn(name, iter, s):
-    for i in range(iter):
-        with open(name+'.csv', 'a') as f:
-            f.write('{}\n'.format(i))
-        sleep(s)
-
-   
-def x():
-    tk1 =   ScheduledTask(
-        task_fn             ,
-        'task_1'            ,
-        ['1', 20, 2]        ,
-        is_parallel   = True)
-    return Scheduler(schedules= [Schedule([tk1])])
-'''
-dt      = datetime.utcnow()
-date_1  = dt+ timedelta(seconds= 30)
-date_2  = dt+ timedelta(minutes= 1)
-
-time_1  = Time(
-    'OFFSET'        ,
-    second      = 0 )
-time_2  = Time(
-    'OFFSET'                   ,
-    second     = 5             ,
-    minute     = dt.minute+1   ,
-    hour       = dt.hour       )
-time_3  = Time(
-    'LAST_START'               ,
-    second     = 5             ,
-    minute     = 1             )
-time_4  = Time(
-    'LAST_STOP'                 ,
-    minute     = 2             )
-
-tk1  = ScheduledTask(
-    task_fn     ,
-    'task_1'    ,
-    ['1', 20, 2],
-    is_parallel   = True ,    
-    )
-
-task_2  = Task(
-    'task_2'    ,
-    task_fn     ,
-    ['2', 20, 2],
-    is_parallel   = True ,    
-    )
-sch_1   = Schedule(tasks=[task_1])
-sch_2   = Schedule(tasks=[task_2], times= [time_1, time_2,time_3])
-
-schr    = Scheduler([sch_1, sch_2], frequency= 5.0)'''
+            awaiting_str= awaiting_str  ,
+            resting_hdr = resting_hdr   ,
+            resting_str = resting_str   )

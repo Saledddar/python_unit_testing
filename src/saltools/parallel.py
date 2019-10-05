@@ -336,7 +336,7 @@ class NiceFactory(EasyObj):
                 del self.working[_id]
                 task_dict['task'].last_stop_status   = ExitStauts.STOPPED
                 task_dict['task'].last_stop          = datetime.utcnow()
-    def is_task_running     (
+    def does_task_running   (
         self    ,
         task    ):
         return task in [x['task'] for x in self.working.values()]

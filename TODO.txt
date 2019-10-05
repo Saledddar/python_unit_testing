@@ -1,3 +1,4 @@
+- Fix print recursion bug
 - schedule  : add weekday to time
 - reload    : Do not reload dependents if module failed to reload 
 - Add default params values to docs
