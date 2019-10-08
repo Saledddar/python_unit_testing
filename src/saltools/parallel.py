@@ -240,7 +240,8 @@ class NiceFactory(EasyObj):
             if      isinstance(can_be_task, FactoryTask):
                 if          self.n_workers != None  :
                     worker_name = self.workers_queue.get()
-                    self._run_task(can_be_task, worker_name)
+                    if      self.state == State.RUNNING :
+                        self._run_task(can_be_task, worker_name)
                 else                                :
                     self._run_task(task, 'Worker {}'.format(self._id_cpt+1))
         self._manager_thread.join()

@@ -226,6 +226,9 @@ class Scheduler (stp.NiceFactory):
             'default'   : []        }),
         ('is_print_report'  , {
             'type'      : bool      ,
+            'default'   : True      }),
+        ('is_clear_report'  , {
+            'type'      : bool      ,
             'default'   : True      }),))
 
     def _on_init        (
@@ -273,7 +276,8 @@ class Scheduler (stp.NiceFactory):
         self.resting    = [task for task in tasks if task not in awaiting_tasks] 
         self._report(current_dt)
         if      self.is_print_report    :
-            os.system('clear')
+            if      self.is_clear_report    :
+                os.system('clear')
             print(self._g_nice_report(current_dt))
         
         return self.pending 
