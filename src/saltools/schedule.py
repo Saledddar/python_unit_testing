@@ -266,14 +266,15 @@ class Scheduler (stp.NiceFactory):
 
         for task in   tasks :
             for time in task.next_times :
-                print(time, current_dt, current_dt <= time)
                 if      current_dt <= time                      \
                         and not (                               \
                             not task.is_parallel                \
                             and self.does_task_running(task))   :
                     self.awaiting.append([task, time])
         awaiting_tasks  = set([awaiting[0] for awaiting in self.awaiting])
-        self.resting    = [task for task in tasks if task not in awaiting_tasks] 
+        self.resting    = [task for task in tasks if 
+            task not in awaiting_tasks              \
+            and  not self.does_task_running(task)   ] 
         self._report(current_dt)
         if      self.is_print_report    :
             if      self.is_clear_report    :
