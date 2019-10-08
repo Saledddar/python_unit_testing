@@ -347,5 +347,16 @@ class NiceFactory(EasyObj):
     def join                (
         self    ):
         self._task_thread.join()
+    def join_exit           (
+        self    ):
+        while True :
+            try :
+                input()
+            except KeyboardInterrupt:
+                self.logger.info({'User action': 'Keyboard interrupt'})
+                break
+        self.stop()
+        self.join()
+        self.logger.stop()
 atexit.unregister(stl.Logger.stop_all)  
 atexit.register(NiceFactory.stop_all)
