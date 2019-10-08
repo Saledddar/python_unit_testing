@@ -103,13 +103,15 @@ def join_string_array   (
             bool    : Description of return value
     '''
     return delimiter.join([ x.strip() for x in str_iterable if x.strip() != ''])
-def getitem             (
+def g_item              (
         obj , 
         attr):
-        if      hasattr(obj, '__getitem__'):
-            return obj[attr]
-        else                                :
+        if      hasattr(obj, attr)              :
             return getattr(obj, attr)
+        elif        hasattr(obj, '__getitem__') :
+            return obj[attr]
+        else                                    :
+            return None
 def g_path              (
     obj                     , 
     path            = 0     ,
@@ -134,7 +136,7 @@ def g_path              (
       
     for attr in path   :
         try :
-            obj   = getitem(obj, attr)
+            obj   = g_item(obj, attr)
         except  :
             return default_value if default_value != None else obj if return_last else None
     return obj
