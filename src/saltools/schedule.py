@@ -127,7 +127,7 @@ class TimeRange (stl.EasyObj):
             'default'   : True  ,
             'type'      : bool  }),
         ('second'   , {
-            'default'   : [0,30]    ,
+            'default'   : None      ,
             'type'      : int       }),
         ('minute'   , {
             'default'   : None  ,
