@@ -200,6 +200,7 @@ class NiceFactory(EasyObj):
         __check_status(self.thread_status_queue )
     def _stop               (
         self            ):
+        self.logger.info({'Signal received': 'STOP'})
         for k, v  in self.working.items() :
             v['worker'].join()
         self._check_status()
@@ -222,7 +223,6 @@ class NiceFactory(EasyObj):
         while not self._is_done():
             can_be_task = self.tasks_queue.get()
             if      can_be_task == Signal.STOP          :
-                self.logger.info({'Signal received': 'STOP'})
                 self._stop()
                 break 
             if      can_be_task == Signal.SUSPEND       :
@@ -230,7 +230,6 @@ class NiceFactory(EasyObj):
                 self.state  = State.SUSPENDED
                 signal  = self.signals_queue.get()
                 if      signal  == Signal.STOP  :
-                    self.logger.info({'Signal received': 'STOP'})
                     self._stop()
                     break 
                 if      signal  == Signal.RESUME:
@@ -240,6 +239,9 @@ class NiceFactory(EasyObj):
             if      isinstance(can_be_task, FactoryTask):
                 if          self.n_workers != None  :
                     worker_name = self.workers_queue.get()
+                    if      worker_name == Signal.STOP  :
+                        self._stop()
+                        break 
                     if      self.state == State.RUNNING :
                         self._run_task(can_be_task, worker_name)
                 else                                :
@@ -252,7 +254,8 @@ class NiceFactory(EasyObj):
         is_log_end      = True  )
     def _manager_loop       (
         self    ):
-        while   self.state not in [
+        while   len(self.working) != 0  \
+                or self.state not in    [
             State.STOPPING  ,
             State.IDLE      ]:
             self._check_status()
