@@ -341,6 +341,8 @@ class NiceFactory(EasyObj):
         self    ,
         task    ):
         return task in [x['task'] for x in self.working.values()]
-
+    def join                (
+        self    ):
+        self._task_thread.join()
 atexit.unregister(stl.Logger.stop_all)  
 atexit.register(NiceFactory.stop_all)
