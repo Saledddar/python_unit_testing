@@ -302,6 +302,7 @@ class Scheduler (stp.NiceFactory):
             '----------'                ,
             '{awaiting_hdr}'            ,
             '{awaiting_str}'            ,
+            '\n'                        ,
             'RESTING'                   ,
             '----------'                ,
             '{resting_hdr}'             ,

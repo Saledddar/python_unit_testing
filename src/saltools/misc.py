@@ -48,7 +48,7 @@ class SQLAlchemyEBuilder(EasyObj):
                 db_engine   = self.db_engine.name.lower()   ,
                 db          = self.db                       )
         else                                                :
-            connection_str  = '{db_engine}://{user}:{pwd}@{host}:{port}/{database}'.format(
+            connection_str  = '{db_engine}://{user}:{pwd}@{host}:{port}/{db}'.format(
                 db_engine   = self.db_engine.name.lower()   ,
                 user        = self.user                     ,
                 pwd         = self.pwd                      ,
