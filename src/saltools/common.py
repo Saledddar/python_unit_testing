@@ -306,34 +306,7 @@ class   EasyObj():
             if      hasattr(base, '_on_init')   :
                     base._on_init(self)
         self._on_init()
-    def __str__ (
-        self    ):
-        '''Gets an str for the attributes.
-
-            A string representation for the object attributes.\
-            
-            Returns:
-                str : An str with the attributes and their values
-        '''
-        def g_vars(obj, stack):
-            vars_dict    = {}
-            for param in type(obj)._g_all_params():
-                value   = getattr(obj, param)
-                if      hasattr(value, 'EasyObj_PARAMS'):
-                    if      value in stack  :
-                        vars_dict[param]    = '<EasyObj {}>'.format(id(value))
-                    else                    :
-                        stack.append(value)
-                        vars_dict[param] = g_vars(value, stack)
-                else                                    :
-                    vars_dict[param] = value
-            return vars_dict
-
-        return pformat(g_vars(self, []))    
-    def __repr__(
-        self    ):
-        return str(self)
-   
+    
     def _on_init(
         self    ):
         '''Executed after `__init___`.
