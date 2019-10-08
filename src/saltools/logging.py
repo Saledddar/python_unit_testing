@@ -631,7 +631,7 @@ def handle_exception(
                 elif    logger                              :
                     logger.log(l, d)
                 elif    class_logger != None                \
-                        and len(args) != 0                  :
+                        and len(args) != 0                  \
                         and hasattr(args[0], class_logger)  :
                     getattr(args[0], class_logger).log(l, d)
                 else                                        :
