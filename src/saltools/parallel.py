@@ -343,7 +343,7 @@ class NiceFactory(EasyObj):
     def does_task_running   (
         self    ,
         task    ):
-        return task in [x['task'] for x in self.working.values()]
+        return task._id in [x['task']._id for x in self.working.values()]
     def join                (
         self    ):
         self._task_thread.join()

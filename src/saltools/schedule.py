@@ -274,7 +274,8 @@ class Scheduler (stp.NiceFactory):
         awaiting_tasks  = set([awaiting[0] for awaiting in self.awaiting])
         self.resting    = [task for task in tasks if 
             task not in awaiting_tasks              \
-            and  not self.does_task_running(task)   ] 
+            and  not self.does_task_running(task)   \
+            and  not task in self.pending           ] 
         self._report(current_dt)
         if      self.is_print_report    :
             if      self.is_clear_report    :
