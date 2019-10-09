@@ -290,6 +290,7 @@ class NiceFactory(EasyObj):
         
         self._manager_thread.join()
         self.tasks_queue.clear()
+        self.n_tasks    = 0
         self.state = State.IDLE
         if      self.on_stop != None    :
             self.on_stop(self)
