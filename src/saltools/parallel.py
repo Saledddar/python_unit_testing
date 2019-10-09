@@ -59,6 +59,9 @@ class NiceTQueue    ():
     def qsize   (
         self    ):
         return len(self._list)
+    def clear   (
+        self    ):
+        self._list.clear()
 
 class FactoryTask(EasyObj):
       
@@ -281,6 +284,7 @@ class NiceFactory(EasyObj):
                 break
         
         self._manager_thread.join()
+        self.tasks_queue.clear()
         self.state = State.IDLE
     @stl.handle_exception   (
         is_log_start    = True  ,
