@@ -341,8 +341,8 @@ class NiceFactory(EasyObj):
         self.state          = State.RUNNING
         self.LIVE_FACTORIES.append(self)
         self.logger.start()
-        self._task_thread.start()    
         self._manager_thread.start()
+        self._task_thread.start()    
         
     @stl.handle_exception   (
         is_log_start    = True  ,
