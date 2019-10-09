@@ -106,7 +106,7 @@ def join_string_array   (
 def g_item              (
         obj , 
         attr):
-        if      isinstance(attr, str)           \   
+        if      isinstance(attr, str)           \
                 and hasattr(obj, attr)          :
             return getattr(obj, attr)
         elif    hasattr(obj, '__getitem__')     :
