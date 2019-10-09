@@ -198,12 +198,27 @@ class NiceFactory(EasyObj):
                 self.n_tasks    +=1
         __check_status(self.process_status_queue)
         __check_status(self.thread_status_queue )
-    def _stop               (
-        self            ):
-        self.logger.info({'Signal received': 'STOP'})
-        for k, v  in self.working.items() :
-            v['worker'].join()
-        self._check_status()
+    def _check_signal       (
+        self            ,
+        signal_or_task  ):
+        result  = True
+        if      self.state  == Signal.STOPPING      :
+            result = False
+        elif    signal_or_task == Signal.STOP       :
+            self.logger.info({'Signal received': 'STOP'})
+            result  = False 
+        elif    signal_or_task == Signal.SUSPEND    :
+            self.logger.info({'Signal received': 'SUSPEND'})
+            self.state  = State.SUSPENDED
+            signal  = self.signals_queue.get()
+            if      signal  == Signal.STOP  :
+                self.logger.info({'Signal received': 'STOP'})
+                result  = False 
+            if      signal  == Signal.RESUME:
+                self.logger.info({'Signal received': 'RESUME'})
+                self.state  = State.RUNNING
+                result  = True 
+        return result
     @stl.handle_exception   (
         is_log_start    = True  ,
         params_start    = None  ,
@@ -220,30 +235,17 @@ class NiceFactory(EasyObj):
                 - If a `RESUME` signal is received, continue the loop.
             - If a `task` is received, wait for a worker and make it work.
         '''
-        while not self._is_done():
-            can_be_task = self.tasks_queue.get()
-            if      can_be_task == Signal.STOP          :
-                self._stop()
-                break 
-            if      can_be_task == Signal.SUSPEND       :
-                self.logger.info({'Signal received': 'SUSPEND'})
-                self.state  = State.SUSPENDED
-                signal  = self.signals_queue.get()
-                if      signal  == Signal.STOP  :
-                    self._stop()
-                    break 
-                if      signal  == Signal.RESUME:
-                    self.logger.info({'Signal received': 'RESUME'})
-                    self.state  = State.RUNNING
-                    continue
-            if      isinstance(can_be_task, FactoryTask):
+        while not self._is_done() :
+            signal_or_task  = self.tasks_queue.get()
+            if      self._check_signal(signal_or_task)  :
+                continue
+            else                                        :
+                break
+            if      isinstance(signal_or_task, FactoryTask):
                 if          self.n_workers != None  :
                     worker_name = self.workers_queue.get()
-                    if      worker_name == Signal.STOP  :
-                        self._stop()
-                        break 
                     if      self.state == State.RUNNING :
-                        self._run_task(can_be_task, worker_name)
+                        self._run_task(signal_or_task, worker_name)
                 else                                :
                     self._run_task(task, 'Worker {}'.format(self._id_cpt+1))
         self._manager_thread.join()
