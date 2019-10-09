@@ -112,7 +112,7 @@ class NiceFactory(EasyObj):
             'default'   : None  },),
         ('on_stop'      , {
             'default'   : None      , 
-            'type'      : Callable  },),,
+            'type'      : Callable  },),
         ('on_start'     , {
             'default'   : None      , 
             'type'      : Callable  },),))
