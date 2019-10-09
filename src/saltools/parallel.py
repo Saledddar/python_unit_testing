@@ -188,11 +188,12 @@ class NiceFactory(EasyObj):
                         self.n_tasks            )                       )\
                 or (
                     self.max_tasks != None                              \
-                    and self.n_tasks == self.max_tasks                  )\
+                    and self.n_tasks >= self.max_tasks                  )\
                 or (
                     self.is_no_tasks_stop                               \
                     and self.workers_queue.qsize()   == self.n_workers  \
                     and self.tasks_queue.qsize()     == 0               ):
+            self.state  = State.STOPPING
             return True 
         return  False 
     @stl.handle_exception   (
