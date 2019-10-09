@@ -109,7 +109,13 @@ class NiceFactory(EasyObj):
             'default'   : False },),
         ('max_tasks'            , {
             'type'      : int   ,
-            'default'   : None  },),))
+            'default'   : None  },),
+        ('on_stop'      , {
+            'default'   : None      , 
+            'type'      : Callable  },),,
+        ('on_start'     , {
+            'default'   : None      , 
+            'type'      : Callable  },),))
     LIVE_FACTORIES  = []
     
     @classmethod
@@ -284,6 +290,8 @@ class NiceFactory(EasyObj):
         self._manager_thread.join()
         self.tasks_queue.clear()
         self.state = State.IDLE
+        if      self.on_stop != None    :
+            self.on_stop(self)
     @stl.handle_exception   (
         is_log_start    = True  ,
         params_start    = None  ,
@@ -327,11 +335,14 @@ class NiceFactory(EasyObj):
             name    = '{}: manager_thread'.format(self.id_) ,
             target  = self._manager_loop                    ,
             daemon  = True                                  )
+        if      self.on_start != None   :
+            self.on_start(self)
         self.state          = State.RUNNING
         self.LIVE_FACTORIES.append(self)
         self.logger.start()
         self._task_thread.start()    
-        self._manager_thread.start()   
+        self._manager_thread.start()
+        
     @stl.handle_exception   (
         is_log_start    = True  ,
         params_start    = None  )
