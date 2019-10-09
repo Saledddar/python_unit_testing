@@ -93,7 +93,7 @@ class NiceFactory(EasyObj):
             'type'      : str           ,
             'default'   : 'nice_factory'},),
         ('logger'               , {
-            'default'   : stl.ConsoleLogger()   },),
+            'default'   : stl.ConsoleLogger(id_='factory')  },),
         ('manager'              , {
             'default'   : None  },),
         ('manager_frequency'    , {
