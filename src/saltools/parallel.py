@@ -158,8 +158,6 @@ class NiceFactory(EasyObj):
         self.process_status_queue   = Queue()
         self.thread_status_queue    = queue.Queue()
 
-        for task in self.start_tasks :
-            self.tasks_queue.put(task)
         if      self.n_workers != None  :
             for i in range(self.n_workers)  :
                 self.workers_queue.put('Worker {}'.format(i+ 1))   
@@ -319,6 +317,8 @@ class NiceFactory(EasyObj):
         self    ):
         if      self.state  != State.IDLE       :
             return
+        for task in self.start_tasks :
+            self.tasks_queue.put(task)
         self._task_thread   = Thread(
             name    = '{}: task_thread'.format(self.id_)    ,
             target  = self._task_loop                       ,
