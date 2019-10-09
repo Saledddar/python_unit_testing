@@ -34,9 +34,9 @@ class   AutoReloader    ():
     
     def __init__(
         self    ):
-        self.logger         = stl.ConsoleLogger (_id = 'reloader')
+        self.logger         = stl.ConsoleLogger (id_ = 'reloader')
         self.factory        = stp.NiceFactory(
-            _id                 = 'reloader'        ,
+            id_                 = 'reloader'        ,
             logger              = self.logger           ,
             manager             = self._g_reload_modules,
             manager_frequency   = 5.0                   ,

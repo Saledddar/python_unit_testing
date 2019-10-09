@@ -172,13 +172,13 @@ class Logger        (EasyObj        ):
         All derived must override execute_log.
         
         Args:
-            _id         (str)   : The id of the logger, must be unique when running multiple loggers.
+            id_         (str)   : The id of the logger, must be unique when running multiple loggers.
             print_log   (bool)  : Prints the log on the console if True.
     '''
     
     LIVE_LOGGERS    = []
     EasyObj_PARAMS          = OrderedDict((
-        ('_id' , {
+        ('id_' , {
             'default': 'sal-logger' },),))
     
     @staticmethod
@@ -253,7 +253,7 @@ class Logger        (EasyObj        ):
             return 
         self.is_alive = True
         self.thread = Thread(
-            name    = self._id  , 
+            name    = self.id_  , 
             target  = self.loop , 
             daemon  = True      ) 
         self.thread.start()
@@ -321,7 +321,7 @@ class ConsoleLogger (Logger         ):
             dict_text   = '|'.join(['{}, {}'.format(k, v) for k, v in log_dict.items()])
             text        = '[{}][{:<20}] [{:<8}]:{}'.format(
                 log_datetime                ,
-                self._id              , 
+                self.id_              , 
                 level.name                  , 
                 dict_text                   )
         else                    :
@@ -339,7 +339,7 @@ class ConsoleLogger (Logger         ):
 
             text        = '[{}][{:<20}] [{:<8}]:\n{}'.format(
                 log_datetime                ,
-                self._id              , 
+                self.id_              , 
                 level.name                  , 
                 dict_text                   )+'\n'+'='*120
 
@@ -354,7 +354,7 @@ class FileLogger    (ConsoleLogger  ):
 
         Args:
             root        (str    ): The root directory to save the logs, logs will be saved under 
-                                  root/_id.
+                                  root/id_.
             overwrite   (bool   ): If True, always erase previous logs on instance creation.
             combine     (bool   ): If True, all levels are combined in one file ``combined.log``.
     '''
@@ -366,7 +366,7 @@ class FileLogger    (ConsoleLogger  ):
     
 
     def _on_init(self):
-        logs_path   = os.path.join(self.root, self._id)
+        logs_path   = os.path.join(self.root, self.id_)
         #Check and create the root directory
         if not os.path.isdir(logs_path):
             os.makedirs(logs_path)
@@ -394,7 +394,7 @@ class FileLogger    (ConsoleLogger  ):
         '''
         return os.path.join(
             self.root                                           , 
-            self._id                                      , 
+            self.id_                                      , 
             ('combined' if self.combine else level.name)+ '.log')
 
     def execute_log(
@@ -432,7 +432,7 @@ class CsvLogger     (FileLogger     ):
             writer = csv.writer(f, lineterminator='\n')
             writer.writerows([[
                     log_datetime        ,
-                    self._id      ,
+                    self.id_      ,
                     level.name          ,
                     key                 ,
                     str(log_dict[key])  ] for key in log_dict])
@@ -468,10 +468,10 @@ class SQLLogger     (ConsoleLogger  ):
                 
         if self.combine:
             _class = type(
-                '{}_{}'.format(self._id, 'combined')  ,
+                '{}_{}'.format(self.id_, 'combined')  ,
                 (base,                                      ),
                 {   
-                    '__tablename__'   : '{}_{}'.format(self._id, 'combined')    ,
+                    '__tablename__'   : '{}_{}'.format(self.id_, 'combined')    ,
                     'id'              : Column(Integer, primary_key=True)             ,
                     'log_datetime'    : Column(String)                                ,
                     'level'           : Column(String)                                , 
@@ -482,10 +482,10 @@ class SQLLogger     (ConsoleLogger  ):
         else:
             for level in Level :
                 _class = type(
-                    '{}_{}'.format(self._id, level.name)  ,
+                    '{}_{}'.format(self.id_, level.name)  ,
                     (base,                                      ),
                     {   
-                        '__tablename__'   : '{}_{}'.format(self._id, level.name)    ,
+                        '__tablename__'   : '{}_{}'.format(self.id_, level.name)    ,
                         'id'              : Column(Integer, primary_key=True)             ,
                         'log_datetime'    : Column(String)                                ,
                         'title'           : Column(String)                                ,        

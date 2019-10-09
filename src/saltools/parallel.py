@@ -3,7 +3,7 @@ from    collections.abc     import  Iterable        , Callable
 from    collections         import  OrderedDict
 from    sqlalchemy          import  create_engine
 from    multiprocessing     import  Process         , Queue
-from    threading           import  Thread
+from    threading           import  Thread          , Condition
 from    enum                import  Enum
 from    datetime            import  datetime
 from    time                import  sleep
@@ -27,12 +27,42 @@ class State     (Enum):
     SUSPENDED   = 3 
     SUSPENDING  = 4
 
+class NiceTQueue    ():
+    def __init__(
+        self    ):
+        self._list      = []
+        self.condition  = Condition() 
+
+    def insert  (
+        self    ,
+        index   , 
+        item    ):
+        with self.condition :
+            self._list.insert(index, item)
+            self.condition.notifyAll()
+    def put     (
+        self    ,
+        item    ):
+        with self.condition :
+            self._list.append(item)
+            self.condition.notifyAll()
+    def pop     (
+        self    ,
+        index   ):
+        if not len(self._list):
+            with self.condition :
+                self.condition.wait()
+        return self._list.pop(index)
+    def get     (
+        self    ):
+        return self.pop(0)
+
 class FactoryTask(EasyObj):
       
     EasyObj_PARAMS  = OrderedDict((
         ('target'       , {
             'type'      : Callable  }),
-        ('_id'          , {
+        ('id_'          , {
             'type'      : str           ,
             'default'   : 'factory_task'}),
         ('args'         , {
@@ -53,7 +83,7 @@ class NiceFactory(EasyObj):
         ('start_tasks'          , {
             'type'      : FactoryTask   ,
             'default'   : []    },),
-        ('_id'                  , {
+        ('id_'                  , {
             'type'      : str           ,
             'default'   : 'nice_factory'},),
         ('logger'               , {
@@ -82,7 +112,7 @@ class NiceFactory(EasyObj):
         fn          ,
         args        , 
         kwargs      ,
-        _id         ,
+        id_         ,
         status_queue):
         try :
             exec_report = {}
@@ -91,7 +121,7 @@ class NiceFactory(EasyObj):
         except:
             exec_report['status']   = ExitStauts.ERROR
         finally:
-            exec_report['_id']      = _id
+            exec_report['id_']      = id_
             exec_report['last_stop']= datetime.utcnow()
             status_queue.put(exec_report)
     
@@ -112,10 +142,10 @@ class NiceFactory(EasyObj):
         self.state          = State.IDLE
         self.exit_status    = None
         self.working        = {}
-        self._id_cpt        = 0
+        self.id__cpt        = 0
         self.n_tasks        = 0
 
-        self.tasks_queue    = queue.Queue()
+        self.tasks_queue    = NiceTQueue()
         self.workers_queue  = queue.Queue()
         self.signals_queue  = queue.Queue()
         
@@ -127,17 +157,18 @@ class NiceFactory(EasyObj):
         if      self.n_workers != None  :
             for i in range(self.n_workers)  :
                 self.workers_queue.put('Worker {}'.format(i+ 1))   
-    def _is_done            (
+    def _does_done          (
         self    ):
         '''Is it time to call it a day?.
 
-            The factory should close if:
-            - If external condition (custom logic) defined by `does_done` returns `True`.
-            - If number of executed tasks equals `max_tasks`.
+            The factory should close if on of the following is true:
+            - Factory is stopping.
+            - External condition (custom logic) defined by `does_done` returns `True`.
+            - Number of executed tasks equals `max_tasks`.
             - The `boolean` `is_no_tasks_stop` is set to `True`, all worksers are waiting and no tasks are available.
         '''
-        if      \
-                (
+        if      self.state == State.STOPPING                            \
+                or (
                     self.does_done != None                              \
                     and self.does_done                                  (
                         self.tasks_queue        ,
@@ -157,14 +188,14 @@ class NiceFactory(EasyObj):
     @stl.handle_exception   (
         is_log_start    = True  ,
         params_start    = [
-            'task._id'  ,
+            'task.id_'  ,
             'name'      ])
     def _run_task           (
         self    , 
         task    ,
         name    ):
-        self._id_cpt     +=1
-        _id             = self._id_cpt
+        self.id__cpt     +=1
+        id_             = self.id__cpt
         start           = datetime.utcnow()
         task.last_start = start
 
@@ -174,9 +205,9 @@ class NiceFactory(EasyObj):
                         task.target                                                                 , 
                         task.args                                                                   ,
                         task.kwargs                                                                 ,
-                        _id                                                                         ,
+                        id_                                                                         ,
                         self.process_status_queue if task.is_process else self.thread_status_queue  ))
-        self.working[_id]   = {
+        self.working[id_]   = {
             'task'  : task  ,
             'start' : start ,
             'worker': worker}
@@ -186,13 +217,13 @@ class NiceFactory(EasyObj):
         def __check_status(status_queue):
             while status_queue.qsize():
                 exec_report = status_queue.get()
-                task        = self.working[exec_report['_id']]['task']
-                worker      = self.working[exec_report['_id']]['worker']
+                task        = self.working[exec_report['id_']]['task']
+                worker      = self.working[exec_report['id_']]['worker']
 
                 task.last_stop         = exec_report['last_stop']
                 task.last_stop_status  = exec_report['status']
 
-                del self.working[exec_report['_id']]
+                del self.working[exec_report['id_']]
                 if      self.n_workers != None  :
                     self.workers_queue.put(worker.name)
                 self.n_tasks    +=1
@@ -214,7 +245,7 @@ class NiceFactory(EasyObj):
             if      signal  == Signal.STOP  :
                 self.logger.info({'Signal received': 'STOP'})
                 result  = False 
-            if      signal  == Signal.RESUME:
+            elif    signal  == Signal.RESUME:
                 self.logger.info({'Signal received': 'RESUME'})
                 self.state  = State.RUNNING
                 result  = True 
@@ -227,27 +258,25 @@ class NiceFactory(EasyObj):
         self    ):
         '''Factory loop, manages tasks and worksers.
 
-            - Checks for exit condition on every iteration/task.
-            - Waits for a task or a `STOP`/`SUSPEND` signal.
-            - If a `STOP` signal is received, waits for all workers to finish and break.
-            - If a `SUSPEND` signal is received, wait for a new signal.
-                - If a `STOP` signal is received, waits for all workers to finish and break.
-                - If a `RESUME` signal is received, continue the loop.
-            - If a `task` is received, wait for a worker and make it work.
+            - While factory not done, do the following
+                - Wait for a task or signal.
+                - If a task is received, execute.
+                - If a signal is received, check the signal and act accordingly.
+
         '''
-        while not self._is_done() :
+        while not self._does_done() :
             signal_or_task  = self.tasks_queue.get()
-            if      isinstance(signal_or_task, FactoryTask):
+            if      isinstance(signal_or_task, FactoryTask) :
                 if          self.n_workers != None  :
                     worker_name = self.workers_queue.get()
-                    if      self.state == State.RUNNING :
-                        self._run_task(signal_or_task, worker_name)
+                    self._run_task(signal_or_task, worker_name)
                 else                                :
-                    self._run_task(task, 'Worker {}'.format(self._id_cpt+1))
-            elif    self._check_signal(signal_or_task)  :
+                    self._run_task(task, 'Worker {}'.format(self.id__cpt+1))
+            elif    self._check_signal(signal_or_task)      :
                 continue
-            else                                        :
+            else                                            :
                 break
+        
         self._manager_thread.join()
         self.state = State.IDLE
     @stl.handle_exception   (
@@ -256,10 +285,13 @@ class NiceFactory(EasyObj):
         is_log_end      = True  )
     def _manager_loop       (
         self    ):
-        while   len(self.working) != 0  \
-                or self.state not in    [
-            State.STOPPING  ,
-            State.IDLE      ]:
+        while   \
+                self.state not in [
+                        State.IDLE      ,
+                        State.STOPPING  ]           \
+                or (
+                    self.state == State.STOPPING    \
+                    and len(self.working) != 0      ):
             self._check_status()
             if      self.manager    != None         \
                     and self.state == State.RUNNING :
@@ -281,11 +313,11 @@ class NiceFactory(EasyObj):
         if      self.state  != State.IDLE       :
             return
         self._task_thread   = Thread(
-            name    = '{}: task_thread'.format(self._id)    ,
+            name    = '{}: task_thread'.format(self.id_)    ,
             target  = self._task_loop                       ,
             daemon  = True                                  )
         self._manager_thread= Thread(
-            name    = '{}: manager_thread'.format(self._id) ,
+            name    = '{}: manager_thread'.format(self.id_) ,
             target  = self._manager_loop                    ,
             daemon  = True                                  )
         self.state          = State.RUNNING
@@ -305,7 +337,7 @@ class NiceFactory(EasyObj):
             return
 
         self.state  = State.STOPPING
-        self.tasks_queue.put(Signal.STOP)
+        self.tasks_queue.insert(0, Signal.STOP)
         self.signals_queue.put(Signal.STOP)
 
         if      force   :
@@ -328,24 +360,24 @@ class NiceFactory(EasyObj):
         if      self.state      != State.RUNNING:
             return
         self.state  = State.SUSPENDING
-        self.tasks_queue.put(Signal.SUSPEND)
+        self.tasks_queue.insert(0, Signal.SUSPEND)
     @stl.handle_exception   (
         is_log_start    = True  ,
         params_start    = None  )
     def terminate_worker    (
         self,
-        _id ):
-        task_dict   = self.working.get(_id)
+        id_ ):
+        task_dict   = self.working.get(id_)
         if      task_dict                       \
                 and task_dict['task'].is_process:
                 task_dict['worker'].terminate()
-                del self.working[_id]
+                del self.working[id_]
                 task_dict['task'].last_stop_status   = ExitStauts.STOPPED
                 task_dict['task'].last_stop          = datetime.utcnow()
     def does_task_running   (
         self    ,
         task    ):
-        return task._id in [x['task']._id for x in self.working.values()]
+        return task.id_ in [x['task'].id_ for x in self.working.values()]
     def join                (
         self    ):
         self._task_thread.join()
