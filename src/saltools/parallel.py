@@ -202,7 +202,7 @@ class NiceFactory(EasyObj):
         self            ,
         signal_or_task  ):
         result  = True
-        if      self.state  == Signal.STOPPING      :
+        if      self.state  == State.STOPPING      :
             result = False
         elif    signal_or_task == Signal.STOP       :
             self.logger.info({'Signal received': 'STOP'})
