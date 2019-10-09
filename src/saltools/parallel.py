@@ -237,8 +237,6 @@ class NiceFactory(EasyObj):
         '''
         while not self._is_done() :
             signal_or_task  = self.tasks_queue.get()
-            else                                        :
-                break
             if      isinstance(signal_or_task, FactoryTask):
                 if          self.n_workers != None  :
                     worker_name = self.workers_queue.get()
@@ -248,6 +246,8 @@ class NiceFactory(EasyObj):
                     self._run_task(task, 'Worker {}'.format(self._id_cpt+1))
             elif    self._check_signal(signal_or_task)  :
                 continue
+            else                                        :
+                break
         self._manager_thread.join()
         self.state = State.IDLE
     @stl.handle_exception   (
