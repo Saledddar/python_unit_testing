@@ -56,6 +56,9 @@ class NiceTQueue    ():
     def get     (
         self    ):
         return self.pop(0)
+    def qsize   (
+        self    ):
+        return len(self._list)
 
 class FactoryTask(EasyObj):
       
