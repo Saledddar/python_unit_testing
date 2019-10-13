@@ -22,7 +22,8 @@ def do_request  (
     headers     = HEADERS   ,
     session     = None      ,
     cookies     = {}        ,
-    timeout     = 10        ):
+    timeout     = 10        ,
+    proxies     = {}        ):
     '''Simple requests wrapper.
 
         A nice wrapper for the requests module.
@@ -41,6 +42,7 @@ def do_request  (
     '''
     session = session if session else requests.Session()
     session.headers.update(HEADERS)
+    session.proxies.update(proxies)
     for cookie in cookies:
         session.cookies.set(cookie['name'], cookie['value'])
 
