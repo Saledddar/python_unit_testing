@@ -102,10 +102,14 @@ def join_string_array   (
         Returns:
             bool    : Description of return value
     '''
-    return delimiter.join([ x.strip() for x in str_iterable if x.strip() != ''])
+    return delimiter.join([ x.strip() for x in str_iterable if isinstance(x, str) and x.strip() != ''])
 def g_item              (
         obj , 
         attr):
+        try                                     :
+            attr    = int(attr)
+        except                                  :
+            pass
         if      isinstance(attr, str)           \
                 and hasattr(obj, attr)          :
             return getattr(obj, attr)
