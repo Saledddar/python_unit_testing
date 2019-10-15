@@ -22,7 +22,6 @@ def g_url_param (
     query   = urlparse(url).query
     path    = [param]+([] if is_list else [0])
     return  g_path(parse_qs(query), path, is_return_last= False)
-
 def do_request  (
     url                     , 
     params      = None      , 

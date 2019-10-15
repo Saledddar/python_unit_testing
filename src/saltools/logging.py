@@ -650,7 +650,7 @@ def handle_exception(
                     params_dict[kwarg]                          = kwargs[kwarg]
                 
                 params_to_log  = params_to_log if params_to_log else params_dict
-                params_dict = {x: g_path(params_dict,x, return_last= False) for x in params_to_log}
+                params_dict = {x: g_path(params_dict,x, is_return_last= False) for x in params_to_log}
 
                 return {'Parameter: {}'.format(param):  str(params_dict[param]) for param in params_dict}
                 
