@@ -4,7 +4,8 @@
 '''
 from    lxml.html       import  fromstring      , HtmlElement
 from    .logging        import  handle_exception, Level
-from    urllib.parse    import  urlencode
+from    .misc           import  g_path
+from    urllib.parse    import  urlencode       , urlparse      , parse_qs
 
 import  requests
 import  lxml
@@ -13,6 +14,14 @@ requests.packages.urllib3.disable_warnings()
 
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'} 
+
+def g_url_param (
+    url             ,
+    param           ,
+    is_list = False ):
+    query   = urlparse(url).query
+    path    = [param]+([] if is_list else [0])
+    return  g_path(parse_qs(query), path, is_return_last= False)
 
 def do_request  (
     url                     , 

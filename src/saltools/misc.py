@@ -122,7 +122,7 @@ def g_path              (
     path            = 0     ,
     default_value   = None  ,
     path_sep        = '.'   ,
-    return_last     = True  ):
+    is_return_last  = True  ):
     '''Gets a value from a nested dict.
         
         Gets the value specified by path from the nested dict, return `None` on expections.
@@ -143,7 +143,7 @@ def g_path              (
         try :
             obj   = g_item(obj, attr)
         except  :
-            return default_value if default_value != None else obj if return_last else None
+            return default_value if default_value != None else obj if is_return_last else None
     return obj
 def g_config            (
     path        = 'config.json' ,
