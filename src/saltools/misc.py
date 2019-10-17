@@ -4,7 +4,7 @@
 '''
 from    .common         import  EasyObj
 from    collections.abc import  Iterable
-from    collections     import  OrderedDict
+from    collections     import  OrderedDict     , defaultdict
 from    sqlalchemy      import  create_engine
 from    enum            import  Enum
 
@@ -60,6 +60,7 @@ class SQLAlchemyEBuilder(EasyObj):
                 db          = self.db                       ,
                 charset     = self.charset                  )
         self.engine = create_engine(connection_str)
+
 
 def print_progress      (
     current             , 
@@ -165,4 +166,10 @@ def g_config            (
             config = json.load(f)
     
     return config
-        
+def RecDefaultDict      (
+    ):
+    '''A nice way to assign keys, values to a dict automatically.
+
+        Credit goes to https://stackoverflow.com/questions/13151276/automatically-add-key-to-python-dict. 
+    '''
+    return defaultdict(RecDefaultDict)
