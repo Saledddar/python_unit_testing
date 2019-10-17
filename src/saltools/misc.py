@@ -38,23 +38,27 @@ class SQLAlchemyEBuilder(EasyObj):
             'default'   : '3306'    ,
             'type'      : str       },),
         ('db'       , {
-            'default'   : '//sqlite.db' ,
+            'default'   : '/sqlite.db'  ,
+            'type'      : str           },),
+        ('charset'  , {
+            'default'   : 'utf8mb4'     ,
             'type'      : str           },),))
     
     def _on_init(
         self    ):
         if      self.db_engine  == DataBaseEngine.SQLITE    :
-            connection_str  = '{db_engine}://{db}'.format(
+            connection_str  = '{db_engine}://{db}'.format   (
                 db_engine   = self.db_engine.name.lower()   ,
                 db          = self.db                       )
         else                                                :
-            connection_str  = '{db_engine}://{user}:{pwd}@{host}:{port}/{db}'.format(
+            connection_str  = '{db_engine}://{user}:{pwd}@{host}:{port}/{db}?charset={charset}'.format(
                 db_engine   = self.db_engine.name.lower()   ,
                 user        = self.user                     ,
                 pwd         = self.pwd                      ,
                 host        = self.host                     ,
                 port        = self.port                     ,
-                db          = self.db                       )
+                db          = self.db                       ,
+                charset     = self.charset                  )
         self.engine = create_engine(connection_str)
 
 def print_progress      (
