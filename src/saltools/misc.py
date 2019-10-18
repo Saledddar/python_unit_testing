@@ -151,8 +151,9 @@ def g_path              (
             return default_value if default_value != None else obj if is_return_last else None
     return obj
 def g_config            (
-    path        = 'config.json' ,
-    config_type = None          ):
+    path            = 'config.json' ,
+    config_type     = None          ,
+    default_config  = {}            ):
     if      not config_type                 :
         extension   = os.path.splitext(path)[-1].replace('.', '')
         config_type = g_path(
@@ -160,7 +161,7 @@ def g_config            (
             extension.upper()   ,
             ConfigType.JSON     )
     if      not os.path.exists(path)        :
-        return {}
+        return default_config
     if      config_type == ConfigType.JSON  :
         with open(path) as f :
             config = json.load(f)

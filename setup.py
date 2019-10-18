@@ -11,7 +11,7 @@ REQS        = [line.strip() for line in open(join(BASE_DIR, 'requirements.txt'))
 print(REQS)
 setup(
     name                            = 'saltools'                                ,
-    version                         = '0.1.8'                                   ,
+    version                         = '0.1.9'                                   ,
     description                     = 'Some usefull code'                       ,
     long_description                = README                                    ,
     long_description_content_type   = 'text/markdown'                           ,
