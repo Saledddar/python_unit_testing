@@ -146,7 +146,7 @@ class NiceFactory(EasyObj):
         '''
         for fn in cls.LIVE_FACTORIES.copy():
             fn.stop()
-            fn._task_thread.join()
+            fn.join()
         stl.Logger.stop_all()
 
     def _on_init            (

@@ -173,7 +173,7 @@ class Logger        (EasyObj        ):
         
         Args:
             id_         (str)   : The id of the logger, must be unique when running multiple loggers.
-            print_log   (bool)  : Prints the log on the console if True.
+            is_print_log(bool)  : Prints the log on the console if True.
     '''
     
     LIVE_LOGGERS    = []
@@ -309,8 +309,8 @@ class ConsoleLogger (Logger         ):
         A simple console logger, prints the logs on console.
     '''
     EasyObj_PARAMS  = OrderedDict((
-        ('print_log', {'default': True }),
-        ('one_line' , {'default': True })))
+        ('is_print_log' , {'default': True }),
+        ('one_line'     , {'default': True })))
     def execute_log(
             self        , 
             level       , 
@@ -343,7 +343,7 @@ class ConsoleLogger (Logger         ):
                 level.name                  , 
                 dict_text                   )+'\n'+'='*120
 
-        if self.print_log :
+        if self.is_print_log    :
             print(text)
 
         return text
