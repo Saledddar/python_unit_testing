@@ -471,12 +471,12 @@ class SQLLogger     (ConsoleLogger  ):
                 '{}_{}'.format(self.id_, 'combined')  ,
                 (base,                                      ),
                 {   
-                    '__tablename__'   : '{}_{}'.format(self.id_, 'combined')    ,
-                    'id'              : Column(Integer, primary_key=True)             ,
-                    'log_datetime'    : Column(String)                                ,
-                    'level'           : Column(String)                                , 
-                    'title'           : Column(String)                                ,        
-                    'message'         : Column(String)                                }) 
+                    '__tablename__'   : '{}_{}'.format(self.id_, 'combined'),
+                    'id'              : Column(Integer, primary_key=True)   ,
+                    'level'           : Column(String(50))                  , 
+                    'log_datetime'    : Column(String(50))                  ,
+                    'title'           : Column(String(50))                  ,        
+                    'message'         : Column(String(1000))                })  
             self.tables['combined'] = _class
 
         else:
@@ -485,11 +485,11 @@ class SQLLogger     (ConsoleLogger  ):
                     '{}_{}'.format(self.id_, level.name)  ,
                     (base,                                      ),
                     {   
-                        '__tablename__'   : '{}_{}'.format(self.id_, level.name)    ,
-                        'id'              : Column(Integer, primary_key=True)             ,
-                        'log_datetime'    : Column(String)                                ,
-                        'title'           : Column(String)                                ,        
-                        'message'         : Column(String)                                }) 
+                        '__tablename__'   : '{}_{}'.format(self.id_, level.name),
+                        'id'              : Column(Integer, primary_key=True)   ,
+                        'log_datetime'    : Column(String(50))                  ,
+                        'title'           : Column(String(50))                  ,        
+                        'message'         : Column(String(1000))                }) 
                 self.tables[level.name] = _class 
 
         if self.overwrite:
