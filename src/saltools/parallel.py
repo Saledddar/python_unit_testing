@@ -410,6 +410,7 @@ class NiceFactory(EasyObj):
             except KeyboardInterrupt:
                 self.logger.info({'User action': 'Keyboard interrupt'})
                 break
+        print('Stopping ...')
         self.stop()
         self.join()
         self.logger.stop()
