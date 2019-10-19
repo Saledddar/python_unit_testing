@@ -404,6 +404,7 @@ class NiceFactory(EasyObj):
         self._task_thread.join()
     def join_exit           (
         self    ):
+        print('Press CTRL+C to stop the script!')
         while True :
             try :
                 input()
