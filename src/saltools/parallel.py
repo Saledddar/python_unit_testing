@@ -212,6 +212,7 @@ class NiceFactory(EasyObj):
 
         worker              = (Process if task.is_process else Thread)(
                     target  = self._run_task_target ,
+                    name    = name                  ,
                     args    = (
                         task.target                                                                 , 
                         task.args                                                                   ,
