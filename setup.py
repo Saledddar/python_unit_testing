@@ -5,10 +5,7 @@ import  sys
 BASE_DIR    = abspath(dirname(__file__))
 README      = open(join(BASE_DIR, 'README.rst')).read()
 REQS        = [line.strip() for line in open(join(BASE_DIR, 'requirements.txt')).readlines() if line.strip()]
-#Check for BOM
-#if    '' in REQS[0] :
-#      REQS[0] = 
-print(REQS)
+
 setup(
     name                            = 'saltools'                                ,
     version                         = '0.1.9'                                   ,

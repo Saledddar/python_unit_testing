@@ -55,17 +55,19 @@ from    collections     import  OrderedDict
 from    enum            import  Enum
 from    inspect         import  getmro
 from    pprint          import  pformat
+from    typeguard       import  typechecked
 
 MY_CLASS    = '''
     Just something to indicate that the type of the parameter is the same
         as the declaring class since the type cannot be used before is declared.
     '''
  
-class   InfoExceptionType   (Enum):
+class InfoExceptionType   (Enum):
     PROVIDED_TWICE  = 1
     MISSING         = 2
     EXTRA           = 3
-class   ExceptionKwargs     (Exception):
+
+class ExceptionKwargs     (Exception):
     '''Raised by EasyObj
 
         Raised by EasyObj when the params supplied to ``__init__`` do not 
@@ -98,7 +100,7 @@ class   ExceptionKwargs     (Exception):
 
     def __repr__(self):
         return str(self)
-class   ExceptionWrongType  (Exception):
+class ExceptionWrongType  (Exception):
     '''Raised by `EasyObj`.
 
         Raised when a type is specified for a parameter and is not matched on initiation.
@@ -132,14 +134,20 @@ class   ExceptionWrongType  (Exception):
     def __repr__(self):
         return str(self)
  
-class   EasyObj():
+class EasyObj():
     '''Automatic attribute creation from params.
 
         Automatic attribute creation from params that supports default parameters, adapters,
         and inheritance.
         
     '''
-    
+    DEFAULT_PARSERS = {
+        bool    : lambda x  :\
+            True        if x.lower() in ['yes', 'y', 'true' , 'ok' , '1', 't']  \
+            else False  if x.lower() in ['no' , 'n', 'false', 'not', '0', 'f']  \
+            else exec('raise Exception()')                                      ,
+        int     : int       ,
+        float   : float     }
     #Contains params and validators for creating the object, must be overridden
     #Must be an ordered dict.
     EasyObj_PARAMS  = OrderedDict()
@@ -242,13 +250,13 @@ class   EasyObj():
         def_params      ,
         recursive_params):
         def_type            = def_params[param].get('type')
-        parser              = def_params[param].get('parser')
+        parser              = def_params[param].get('parser', cls.DEFAULT_PARSERS.get(def_type))
         adapter             = def_params[param].get('adapter')
         param_value         = value
 
         if      value == None                       :
             param_value = value
-        elif    not def_type                        :
+        elif    def_type == None                    :
             param_value = value
         elif    isinstance(value, list)         and \
                 def_type != list                    :
@@ -313,3 +321,12 @@ class   EasyObj():
 
         '''
         pass
+
+class DummyObj  (EasyObj):
+    def __call__    (
+        self    ):
+        return self 
+    def __getattr__ (
+        self    , 
+        name    ):
+        return self
