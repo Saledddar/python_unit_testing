@@ -211,11 +211,10 @@ class Logger        (EasyObj        ):
                 level.name.lower()              , 
                 lambda                      \
                     x                       ,\
-                    l           = level     ,\
                     is_one_line = None      ,
                     is_raw      = False     :\
                     self.log(
-                        l           , 
+                        level       , 
                         x           , 
                         is_one_line ,
                         is_raw      ) )   
