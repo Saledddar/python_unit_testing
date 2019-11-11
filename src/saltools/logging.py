@@ -131,7 +131,7 @@
 '''
 
 from    sqlalchemy.ext.declarative  import  declarative_base
-from    sqlalchemy                  import  Column          , Integer   , String
+from    sqlalchemy                  import  Column          , Integer   , String    , Text
 from    sqlalchemy.exc              import  OperationalError
 from    sqlalchemy.orm              import  sessionmaker
 from    functools                   import  wraps   , reduce
@@ -489,7 +489,7 @@ class SQLLogger     (ConsoleLogger  ):
                         'id'              : Column(Integer, primary_key=True)   ,
                         'log_datetime'    : Column(String(50))                  ,
                         'title'           : Column(String(50))                  ,        
-                        'message'         : Column(String(1000))                }) 
+                        'message'         : Column(Text())                      }) 
                 self.tables[level.name] = _class 
 
         if self.overwrite:
