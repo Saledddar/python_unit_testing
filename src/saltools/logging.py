@@ -417,7 +417,9 @@ class FileLogger    (ConsoleLogger  ):
         text    = super()._execute_log(
             level       , 
             log_dict    ,
-            log_datetime)
+            log_datetime,
+            is_one_line ,
+            is_raw      )
 
         with open(self.g_path(level),'a') as f :
             f.write(text+'\n')
@@ -526,7 +528,9 @@ class SQLLogger     (ConsoleLogger  ):
         super()._execute_log(
             level       , 
             log_dict    ,
-            log_datetime)
+            log_datetime,
+            is_one_line ,
+            is_raw      )
 
         for key in log_dict:
             if self.combine:
