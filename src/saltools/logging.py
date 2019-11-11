@@ -341,7 +341,7 @@ class ConsoleLogger (Logger         ):
             text        = f'{prefix}{dict_text}'
         else                :
             if      not isinstance(log_dict, dict)    :
-                log_dict = {'': log_dict}
+                log_dict = {log_dict: ''}
             prefix          +='' if self.is_raw else '\n'
             format_message  = lambda message: '\n'+ '\n'.join(textwrap.wrap(
                         message                         , 
@@ -373,8 +373,8 @@ class FileLogger    (ConsoleLogger  ):
         ('combine'  , {'default': True }),
         ('root'     , {'default': '.'}  )))
     
-
-    def _on_init(self):
+    def _on_init    (
+        self    ):
         logs_path   = os.path.join(self.root, self.id_)
         #Check and create the root directory
         if not os.path.isdir(logs_path):
@@ -389,8 +389,9 @@ class FileLogger    (ConsoleLogger  ):
         elif self.combine and self.overwrite:
             path    = os.path.join(logs_path, 'combined'+ '.log')
             open(path, 'w').close()
-
-    def g_path(self, level):
+    def _g_path     (
+        self    , 
+        level   ):
         '''Correct logging path for ``level``.
 
             Get the correct file path to save the log
@@ -405,7 +406,6 @@ class FileLogger    (ConsoleLogger  ):
             self.root                                           , 
             self.id_                                      , 
             ('combined' if self.combine else level.name)+ '.log')
-
     def _execute_log(
             self            , 
             level           , 
@@ -420,7 +420,7 @@ class FileLogger    (ConsoleLogger  ):
             is_one_line ,
             is_raw      )
 
-        with open(self.g_path(level),'a') as f :
+        with open(self._g_path(level),'a') as f :
             f.write(text+'\n')
         return text
 class CsvLogger     (FileLogger     ):
@@ -441,9 +441,12 @@ class CsvLogger     (FileLogger     ):
             self        ,
             level       , 
             log_dict    ,
-            log_datetime)
-
-        with open(self.g_path(level),'a') as f :
+            log_datetime,
+            is_one_line ,
+            is_raw      )
+        if      not isinstance(log_dict, dict):
+            log_dict    = {str(log_dict): ''}
+        with open(self._g_path(level),'a') as f :
             writer = csv.writer(f, lineterminator='\n')
             writer.writerows([[
                     log_datetime        ,
@@ -475,7 +478,8 @@ class SQLLogger     (ConsoleLogger  ):
             'type'      : SQLAlchemyEBuilder    ,
             'default'   : SQLAlchemyEBuilder()  },),))
 
-    def _on_init(self):
+    def _on_init    (
+        self    ):
         super()._on_init()
         self.engine = self.engine_builder.engine
         base = declarative_base()
@@ -516,7 +520,6 @@ class SQLLogger     (ConsoleLogger  ):
         
         base.metadata.create_all(self.engine)
         self.session = sessionmaker(bind= self.engine)()
-         
     def _execute_log(
             self            , 
             level           , 
@@ -530,7 +533,9 @@ class SQLLogger     (ConsoleLogger  ):
             log_datetime,
             is_one_line ,
             is_raw      )
-
+        if      not isinstance(log_dict, dict)    :
+                log_dict = {log_dict: ''}
+        
         for key in log_dict:
             if self.combine:
                 row = self.tables['combined'](
