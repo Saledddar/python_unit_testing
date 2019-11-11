@@ -129,7 +129,6 @@
             ..........
             .....
 '''
-
 from    sqlalchemy.ext.declarative  import  declarative_base
 from    sqlalchemy                  import  Column          , Integer   , String    , Text
 from    sqlalchemy.exc              import  OperationalError
@@ -141,7 +140,7 @@ from    datetime                    import  datetime
 from    threading                   import  Thread
 from    enum                        import  Enum
 
-from    .common                     import  EasyObj
+from    .common                     import  EasyObj             , DummyObj
 from    .misc                       import  SQLAlchemyEBuilder  , g_path
 
 import  traceback
@@ -201,94 +200,49 @@ class Logger        (EasyObj        ):
         traceback   ):
         self.stop()
 
-    def _on_init(
+    def _on_init    (
         self    ):
-        self.queue      = queue.Queue()
+        self._queue     = queue.Queue()
         self.is_alive   = False
 
         for level in Level :
-            setattr(self, level.name.lower(), lambda x, l= level: self.log(l, x))
-    
-    def loop        (
+            setattr(
+                self                            , 
+                level.name.lower()              , 
+                lambda                      \
+                    x                       ,\
+                    l           = level     ,\
+                    is_one_line = None      ,
+                    is_raw      = False     :\
+                    self.log(
+                        l           , 
+                        x           , 
+                        is_one_line ,
+                        is_raw      ) )   
+    def _loop       (
         self    ):
         '''Logging loop.
 
             Keeps looping!
         '''
         while True:
-            item = self.queue.get()
-            if item == 'EXIT_LOGGER_SIGNAL':
+            item = self._queue.get()
+            if      item == None:
                 break
-            else :
-                self.execute_log(*item)
+            else                :
+                self._execute_log(*item)
           
-        self.execute_log(
-            level       = Level.INFO                                                ,
-            log_dict    = {'Logger stopped': 'Logger stopped!'} ,
-            log_datetime= datetime.now().isoformat())
-    def log         (
-        self        ,      
-        level       , 
-        log_dict    ):
-        '''Log the logs.
-
-            Pushes the log to the logging queue.
-            
-            Args    :
-                level   (Level) : The logging level.
-                log_dict(dict)  : The logging dict.
-        '''
-
-        self.queue.put([
-                level                       ,
-                log_dict                    ,
-                datetime.now().isoformat()  ])
-    def start       (
-        self    ):
-        '''Start loging.
-        
-            Starts the logging thread (self.loop)
-        '''
-        if self.is_alive:
-            return 
-        self.is_alive = True
-        self.thread = Thread(
-            name    = self.id_  , 
-            target  = self.loop , 
-            daemon  = True      ) 
-        self.thread.start()
-
-        self.log(
-            level   = Level.INFO                            ,
-            log_dict= {'Logger started': 'Logger started!'} )
-        
-        if self not in Logger.LIVE_LOGGERS:
-            Logger.LIVE_LOGGERS.append(self)
-    def stop        (
-        self    ):
-        '''Stop!
-
-            No more trees are cut, Saving the planet!.
-        '''
-        if not self.is_alive:
-            return 
-
-        self.log(
-            level   = Level.INFO                            ,
-            log_dict= {'Logger stop signal': 'Logger stoping signal received!'} )   
-        
-        #Wait for the logger to log the remaining logs
-        self.queue.put('EXIT_LOGGER_SIGNAL')
-        self.thread.join()
-        self.is_alive  = False 
-
-        if self in Logger.LIVE_LOGGERS:
-            Logger.LIVE_LOGGERS.remove(self)
-    def execute_log (
-            self        , 
-            level       , 
-            log_dict    ,
-            log_datetime):
+        self._execute_log(
+            level       = Level.INFO                            ,
+            log_dict    = 'Logger stopped!'                     ,
+            log_datetime= datetime.now().isoformat()            )
+    def _execute_log(
+            self            , 
+            level           , 
+            log_dict        ,
+            log_datetime    ,
+            is_one_line     ,
+            is_raw          ):
         '''Write the logs.
 
             Defines the logging logic set by the derived logger class.
@@ -304,44 +258,100 @@ class Logger        (EasyObj        ):
                 str         : The log string or None.
         '''
         raise NotImplementedError()
+    
+    def log         (
+        self                    ,         
+        level                   , 
+        log_dict                ,
+        is_one_line    = None   ,
+        is_raw         = False  ):
+        '''Log the logs.
+
+            Pushes the log to the logging queue.
+            
+            Args    :
+                level   (Level) : The logging level.
+                log_dict(dict)  : The logging dict.
+        '''
+
+        self._queue.put([
+                level                           ,
+                log_dict                        ,
+                datetime.now().isoformat()      ,
+                is_one_line                     ,
+                is_raw                          ])
+    def start       (
+        self    ):
+        '''Start loging.
+        
+            Starts the logging thread (self._loop)
+        '''
+        if self.is_alive:
+            return 
+        self.is_alive = True
+        self._thread = Thread(
+            name    = self.id_      , 
+            target  = self._loop    , 
+            daemon  = True          ) 
+        self._thread.start()
+
+        self.info('Logger started!')
+        
+        if self not in Logger.LIVE_LOGGERS:
+            Logger.LIVE_LOGGERS.append(self)
+    def stop        (
+        self    ):
+        '''Stop!
+
+            No more trees are cut, Saving the planet!.
+        '''
+        if not self.is_alive:
+            return 
+
+        self.info('Logger stoping signal received!')
+        
+        #Wait for the logger to log the remaining logs
+        self._queue.put(None)
+        self._thread.join()
+        self.is_alive  = False 
+
+        if self in Logger.LIVE_LOGGERS:
+            Logger.LIVE_LOGGERS.remove(self)
+    
 class ConsoleLogger (Logger         ):
     '''Console logger.
         A simple console logger, prints the logs on console.
     '''
     EasyObj_PARAMS  = OrderedDict((
         ('is_print_log' , {'default': True }),
-        ('one_line'     , {'default': True })))
-    def execute_log(
-            self        , 
-            level       , 
-            log_dict    ,
-            log_datetime):
+        ('is_one_line'     , {'default': True })))
+    def _execute_log(
+            self            , 
+            level           , 
+            log_dict        ,
+            log_datetime    ,
+            is_one_line     ,
+            is_raw          ):
 
-        if      self.one_line   :
-            dict_text   = '|'.join(['{}, {}'.format(k, v) for k, v in log_dict.items()])
-            text        = '[{}][{:<20}] [{:<8}]:{}'.format(
-                log_datetime                ,
-                self.id_              , 
-                level.name                  , 
-                dict_text                   )
-        else                    :
+        is_one_line = is_one_line if is_one_line != None else self.is_one_line
+        prefix      = '' if is_raw else f'[{log_datetime}][{self.id_:<20}] [{level.name:<8}]: '
+        if      is_one_line    :
+            dict_text   = '|'.join([f'{k}, {c}' for k, v in log_dict.items()])  if\
+                            isinstance(log_dict, dict)                          else\
+                            str(log_dict) 
+            text        = f'{prefix}{dict_text}'
+        else                :
+            if      not isinstance(log_dict, dict)    :
+                log_dict = {'': log_dict}
+            prefix          +='' if self.is_raw else '\n'
             format_message  = lambda message: '\n'+ '\n'.join(textwrap.wrap(
                         message                         , 
                         subsequent_indent   = '\t\t'    , 
                         initial_indent      = '\t\t'    , 
                         width               = 100       , 
                         break_on_hyphens    = True      )) 
-
-            dict_text   = '\n'.join(
-                ['\t{:<20}:{}'.format(
-                    k,
-                    format_message(str(v))) for k,v in log_dict.items()])
-
-            text        = '[{}][{:<20}] [{:<8}]:\n{}'.format(
-                log_datetime                ,
-                self.id_              , 
-                level.name                  , 
-                dict_text                   )+'\n'+'='*120
+            dict_text       = '\n'.join([f'\t{k:<20}:{format_message(str(v))}' for k,v in log_dict.items()])
+            text            = f'{prefix}{dict_text}'+'\n'+'='*120
 
         if self.is_print_log    :
             print(text)
@@ -397,12 +407,14 @@ class FileLogger    (ConsoleLogger  ):
             self.id_                                      , 
             ('combined' if self.combine else level.name)+ '.log')
 
-    def execute_log(
-            self        , 
-            level       , 
-            log_dict    ,
-            log_datetime):
-        text    = super().execute_log(
+    def _execute_log(
+            self            , 
+            level           , 
+            log_dict        ,
+            log_datetime    ,
+            is_one_line     ,
+            is_raw          ):
+        text    = super()._execute_log(
             level       , 
             log_dict    ,
             log_datetime)
@@ -417,12 +429,14 @@ class CsvLogger     (FileLogger     ):
         Check ``ConsoleLogger`` args.
     '''
             
-    def execute_log(
-            self        , 
-            level       , 
-            log_dict    ,
-            log_datetime):
-        ConsoleLogger.execute_log(
+    def _execute_log(
+            self            , 
+            level           , 
+            log_dict        ,
+            log_datetime    ,
+            is_one_line     ,
+            is_raw          ):
+        ConsoleLogger._execute_log(
             self        ,
             level       , 
             log_dict    ,
@@ -502,12 +516,14 @@ class SQLLogger     (ConsoleLogger  ):
         base.metadata.create_all(self.engine)
         self.session = sessionmaker(bind= self.engine)()
          
-    def execute_log(
-            self        , 
-            level       , 
-            log_dict    ,
-            log_datetime):
-        super().execute_log(
+    def _execute_log(
+            self            , 
+            level           , 
+            log_dict        ,
+            log_datetime    ,
+            is_one_line     ,
+            is_raw          ):
+        super()._execute_log(
             level       , 
             log_dict    ,
             log_datetime)
@@ -528,21 +544,11 @@ class SQLLogger     (ConsoleLogger  ):
             self.session.add(row)
         self.session.commit()
 
-class DummyLogger(EasyObj):
-    CALLABLES   =  [x for x in dir(Logger()) if             \
-                isinstance(getattr(Logger(), x), Callable)  ]
-
-    def __getattr__(self, name):
-        if      name in self.CALLABLES   :
-            return lambda *args, **kwargs: None             
-        else                        :
-            return None
-
 ############################################################
 #################### Exceptions
 ############################################################
 
-MAIN_LOGGER = DummyLogger() 
+MAIN_LOGGER = DummyObj() 
 
 def set_main_logger(
     logger          , 
@@ -561,7 +567,7 @@ def set_main_logger(
     '''
     global MAIN_LOGGER
     if      not (
-                isinstance(MAIN_LOGGER, DummyLogger) or\
+                isinstance(MAIN_LOGGER, DummyObj)   or\
                 erase                                   ):
             return 
     if      MAIN_LOGGER  and stop   :
