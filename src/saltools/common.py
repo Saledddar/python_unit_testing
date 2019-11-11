@@ -55,7 +55,6 @@ from    collections     import  OrderedDict
 from    enum            import  Enum
 from    inspect         import  getmro
 from    pprint          import  pformat
-from    typeguard       import  typechecked
 
 MY_CLASS    = '''
     Just something to indicate that the type of the parameter is the same

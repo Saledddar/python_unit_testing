@@ -335,7 +335,7 @@ class ConsoleLogger (Logger         ):
         is_one_line = is_one_line if is_one_line != None else self.is_one_line
         prefix      = '' if is_raw else f'[{log_datetime}][{self.id_:<20}] [{level.name:<8}]: '
         if      is_one_line    :
-            dict_text   = '|'.join([f'{k}, {c}' for k, v in log_dict.items()])  if\
+            dict_text   = '|'.join([f'{k}, {v}' for k, v in log_dict.items()])  if\
                             isinstance(log_dict, dict)                          else\
                             str(log_dict) 
             text        = f'{prefix}{dict_text}'
