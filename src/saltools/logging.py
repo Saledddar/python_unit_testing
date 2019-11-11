@@ -211,10 +211,11 @@ class Logger        (EasyObj        ):
                 level.name.lower()              , 
                 lambda                      \
                     x                       ,\
+                    l           = level     ,
                     is_one_line = None      ,
                     is_raw      = False     :\
                     self.log(
-                        level       , 
+                        l           , 
                         x           , 
                         is_one_line ,
                         is_raw      ) )   
@@ -231,10 +232,7 @@ class Logger        (EasyObj        ):
             else                :
                 self._execute_log(*item)
           
-        self._execute_log(
-            level       = Level.INFO                            ,
-            log_dict    = 'Logger stopped!'                     ,
-            log_datetime= datetime.now().isoformat()            )
+        self.info('Logger stopped!')
     def _execute_log(
             self            , 
             level           , 
@@ -285,10 +283,11 @@ class Logger        (EasyObj        ):
         
             Starts the logging thread (self._loop)
         '''
-        if self.is_alive:
+        if      self.is_alive:
             return 
-        self.is_alive = True
-        self._thread = Thread(
+        
+        self.is_alive   = True
+        self._thread    = Thread(
             name    = self.id_      , 
             target  = self._loop    , 
             daemon  = True          ) 
@@ -296,7 +295,7 @@ class Logger        (EasyObj        ):
 
         self.info('Logger started!')
         
-        if self not in Logger.LIVE_LOGGERS:
+        if      self not in Logger.LIVE_LOGGERS :
             Logger.LIVE_LOGGERS.append(self)
     def stop        (
         self    ):
@@ -307,7 +306,7 @@ class Logger        (EasyObj        ):
         if not self.is_alive:
             return 
 
-        self.info('Logger stoping signal received!')
+        self.info('Logger stopping!')
         
         #Wait for the logger to log the remaining logs
         self._queue.put(None)
