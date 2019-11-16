@@ -322,8 +322,29 @@ class EasyObj():
         pass
 
 class DummyObj  (EasyObj):
+    '''
+        An object that never returns None.
+
+        Can be used instead of checking for None before calling a method or an attribute
+
+        Example:
+            >>> class A():
+            >>>     def f(self):
+            >>>         print('A.f()')
+            >>> a = A()
+            >>> a.f()
+                A.f()
+            >>> #DummyObj can be used to fill in a variable that might be null
+            >>> a = DummyObj()
+            >>> a.f()
+                <saltools.common.DummyObj at 0x____>
+            >>> a.f().b.c(1,2).d.e()
+                <saltools.common.DummyObj at 0x____>
+    '''
     def __call__    (
-        self    ):
+        self        ,
+        *args       ,
+        **kwargs    ):
         return self 
     def __getattr__ (
         self    , 
