@@ -47,15 +47,19 @@ class NiceTQueue    ():
             self._list.append(item)
             self.condition.notifyAll()
     def pop     (
-        self    ,
-        index   ):
+        self            ,
+        index           ,
+        timeout = None  ):
         if not len(self._list):
             with self.condition :
-                self.condition.wait()
+                self.condition.wait(timeout)
+        if      len(self._list) < index+ 1  :
+            raise queue.Empty()
         return self._list.pop(index)
     def get     (
-        self    ):
-        return self.pop(0)
+        self            ,
+        timeout = None  ):
+        return self.pop(0, timeout)
     def qsize   (
         self    ):
         return len(self._list)
@@ -172,10 +176,10 @@ class NiceFactory(EasyObj):
         '''Is it time to call it a day?.
 
             The factory should close if on of the following is true:
-            - Factory is stopping.
-            - External condition (custom logic) defined by `does_done` returns `True`.
-            - Number of executed tasks equals `max_tasks`.
-            - The `boolean` `is_no_tasks_stop` is set to `True`, all worksers are waiting and no tasks are available.
+                - Factory is stopping.
+                - External condition (custom logic) defined by `does_done` returns `True`.
+                - Number of executed tasks equals `max_tasks`.
+                - The `boolean` `is_no_tasks_stop` is set to `True`, all worksers are waiting and no tasks are available.
         '''
         if      self.state == State.STOPPING                            \
                 or (
@@ -245,7 +249,7 @@ class NiceFactory(EasyObj):
         self            ,
         signal_or_task  ):
         result  = True
-        if      self.state  == State.STOPPING      :
+        if      self.state  == State.STOPPING       :
             result = False
         elif    signal_or_task == Signal.STOP       :
             self.logger.info({'Signal received': 'STOP'})
@@ -281,7 +285,6 @@ class NiceFactory(EasyObj):
                 signal_or_task  = self.tasks_queue.get(timeout= 1)
             except  queue.Empty :
                 continue 
-
             if      isinstance(signal_or_task, FactoryTask) :
                 if          self.n_workers != None  :
                     worker_name = self.workers_queue.get()
@@ -292,7 +295,6 @@ class NiceFactory(EasyObj):
                 continue
             else                                            :
                 break
-        
         self._manager_thread.join()
         self.tasks_queue.clear()
         self.n_tasks    = 0
@@ -409,16 +411,17 @@ class NiceFactory(EasyObj):
     def join_exit           (
         self    ):
         print('Press CTRL+C to stop the script!')
-        while True :
+        while self.state != State.IDLE :
             try :
-                input()
+                sleep(1)
             except KeyboardInterrupt:
                 self.logger.info({'User action': 'Keyboard interrupt'})
                 break
         print('Stopping ...')
-        self.stop()
-        self.join()
-        self.logger.stop()
+        if      self.state != State.IDLE    :
+            self.stop()
+            self.join()
+            self.logger.stop()
 
 atexit.unregister(stl.Logger.stop_all)  
 atexit.register(NiceFactory.stop_all)

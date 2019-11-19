@@ -382,10 +382,7 @@ class EasyObj   :
                     dict_[k]    = obj.__str__(exclude)
                 else                        :
                     dict_[k]    = id(obj)
-        return pformat(dict_)
-    def __repr__    (
-        self    ):
-        return str(self) 
+        return pformat(dict_) 
                 
     def _on_init(
         self    ):
