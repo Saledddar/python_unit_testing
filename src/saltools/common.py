@@ -133,7 +133,7 @@ class ExceptionWrongType  (Exception):
     def __repr__(self):
         return str(self)
  
-class EasyObj():
+class EasyObj   :
     '''Automatic attribute creation from params.
 
         Automatic attribute creation from params that supports default parameters, adapters,
@@ -151,6 +151,12 @@ class EasyObj():
     #Must be an ordered dict.
     EasyObj_PARAMS  = OrderedDict()
 
+    @classmethod            
+    def _EasyObj_parser     (
+        cls     ,
+        *args   ,
+        **kwargs):
+        return args, kwargs
     @classmethod
     def _g_all_values       (
         cls         ,
@@ -233,6 +239,8 @@ class EasyObj():
         recursive_params    = {}
         for param in def_params :
             def_type = def_params[param].get('type')
+            if      isinstance(def_type, list)      :
+                def_type    = def_type[0]
             if      not def_type                    :
                 continue
             elif    def_type   == MY_CLASS          :
@@ -243,48 +251,83 @@ class EasyObj():
         return recursive_params 
     @classmethod
     def _g_param_value      (
-        cls             ,
-        param           ,
-        value           ,
-        def_params      ,
-        recursive_params):
-        def_type            = def_params[param].get('type')
-        parser              = def_params[param].get('parser', cls.DEFAULT_PARSERS.get(def_type))
+        cls                     ,
+        param                   ,
+        value                   ,
+        def_params              ,
+        recursive_params        ,
+        def_type        = None  ):
+        '''Gets the value of a given parameter
+
+            The value is returned respecting the following constraints in order:
+                - If None, set to None.
+                - If no type is specified, set to value.
+                - If the type is a list                 :
+                    - If value is a list    :
+                        - recursion on each element with the generic type.
+                    - If value is not a list    :
+                        - recursion on value  with the generic type.
+                - If value is an instance of the type   :
+                    - Set to value.
+                - If type is Enum and values is a string:
+                    - Try parsing.
+                - If type is an Easy_Obj and not set    :
+                - If a parser exists                    :
+                    - Set to parser return value.
+                    - Pass args or kwargs.
+                - If all the above failed, raise an exception.
+                - Apply the adapter if any.
+
+        '''
+        if      def_type    == None :
+            def_type            = def_params[param].get('type')
+        parser              = def_params[param].get(
+            'parser'                , 
+            cls.DEFAULT_PARSERS.get (
+                def_type            ) if isinstance(def_type, type) else None)
         adapter             = def_params[param].get('adapter')
         param_value         = value
+        if      def_type    == MY_CLASS :
+            def_type    = cls
 
-        if      value == None                       :
+        if      value       == None                     :
             param_value = value
-        elif    def_type == None                    :
+        elif    def_type    == None                     :
             param_value = value
-        elif    isinstance(value, list)         and \
-                def_type != list                    :
+        elif    isinstance(def_type , list      )       :
+            if      isinstance(value, list) :
                 param_value = [
-                    cls._g_param_value(param, x, def_params, recursive_params) for x in value]
-        elif    param in recursive_params           :
-            if      type(value) == def_type     :
-                param_value = value
-            elif    isinstance(value, dict)     :
-                param_value = recursive_params[param](**value)
-            else                                :
-                param_value = recursive_params[param](value)
-        elif    issubclass(def_type, Enum)          :
-            if      isinstance(value, Enum) :
-                param_value = value
-            elif    isinstance(value, str)  :
-                param_value = getattr(def_type, value)
+                    cls._g_param_value(
+                        param           , 
+                        x               , 
+                        def_params      , 
+                        recursive_params,
+                        def_type[0]     ) for x in value]
             else                            :
-                raise ExceptionWrongType(
-                        cls         ,
-                        param       ,
-                        def_type    ,
-                        type(value) ,
-                        value       )
-        elif    parser and isinstance(value, str)   :
+                param_value = [
+                    cls._g_param_value(
+                        param           , 
+                        value           , 
+                        def_params      , 
+                        recursive_params,
+                        def_type[0]     )]
+        elif    isinstance(value    , def_type  )       :
+            param_value = value 
+        elif    issubclass(def_type , Enum      )   and \
+                isinstance(value    , str       )       :
+            param_value = getattr(def_type, value)       
+        elif    param in recursive_params               :
+            if      isinstance(value    , dict      )   :
+                param_value = def_type(**value)
+            elif    isinstance(value    , list      )   :
+                param_value = def_type(*value)
+            else                                        :
+                param_value = def_type(value)
+        elif    parser      != None                     :
             param_value = parser(value)
-        elif    issubclass(type(value), def_type)   :
-            param_value = value
-        else                                        :
+            assert  isinstance(param_value, def_type),\
+                f'Parser type {type(param_value)} is not {def_type} : {param} = {value}'
+        else                                            :
             raise ExceptionWrongType(
                         cls         ,
                         param       ,
@@ -294,36 +337,74 @@ class EasyObj():
         
         return adapter(param_value) if adapter else param_value
     
-    def __init__(
+    def __init__    (
         self    , 
         *args   , 
         **kwargs):
         my_type             = type(self)
+        args, kwargs        = my_type._EasyObj_parser(*args, **kwargs)
         #Get all inherited params
         def_params          = my_type._g_all_params()
         #Checks values params 
         params              = my_type._g_all_values(self, args, kwargs, def_params)
         #Get EasyObj params
         recursive_params    = my_type._g_recursive_params(def_params)
+        #Try custom parsing logic
 
-        for param in params :    
-            setattr(self, param, my_type._g_param_value(param, params[param], def_params, recursive_params))
+
+        for param in params :
+            setattr(
+                self                    , 
+                param                   , 
+                my_type._g_param_value  (
+                    param           , 
+                    params[param]   , 
+                    def_params      , 
+                    recursive_params)   )
         
         for base in list(reversed(getmro(my_type)))[:-1]    :
             if      hasattr(base, '_on_init')   :
                     base._on_init(self)
         self._on_init()
-    
+    def __str__     (
+        self        ,
+        exclude = []):
+        dict_   = {
+            'object_id' : id(self)  }
+        exclude.append(self)
+        for k,v in self._g_all_params().items():
+            obj         = getattr(self, k)
+            is_easy_obj = hasattr(type(obj), 'EasyObj_PARAMS')
+            if      not is_easy_obj :
+                dict_[k]    = obj
+            else                    :
+                if      obj not in exclude  :
+                    dict_[k]    = obj.__str__(exclude)
+                else                        :
+                    dict_[k]    = id(obj)
+        return pformat(dict_)
+    def __repr__    (
+        self    ):
+        return str(self) 
+                
     def _on_init(
         self    ):
         '''Executed after `__init___`.
 
         '''
         pass
-
-class DummyObj  (EasyObj):
-    '''
-        An object that never returns None.
+class AutoObj   :
+    def __init__(
+        self        ,
+        *args       ,
+        **kwargs    ):
+        for i in range(len(args))   :
+            setattr(self, f'param_{i}', args[i])
+        for k,v in kwargs.items()   :
+            setattr(self, k, v)
+class DummyObj  (
+    EasyObj ):
+    '''An object that never returns None.
 
         Can be used instead of checking for None before calling a method or an attribute
 
@@ -336,16 +417,22 @@ class DummyObj  (EasyObj):
                 A.f()
             >>> #DummyObj can be used to fill in a variable that might be null
             >>> a = DummyObj()
-            >>> a.f()
+            >>> a.f().b
                 <saltools.common.DummyObj at 0x____>
+            >>> #The above can be written otherwise as:
+            >>> if      a != None   :
+            >>>     if      a.f() != None    : 
+            >>>         a.f().b
+            >>> #Supports function parameters
             >>> a.f().b.c(1,2).d.e()
                 <saltools.common.DummyObj at 0x____>
     '''
+    
     def __call__    (
         self        ,
         *args       ,
         **kwargs    ):
-        return self 
+        return self
     def __getattr__ (
         self    , 
         name    ):

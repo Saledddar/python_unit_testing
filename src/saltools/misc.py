@@ -92,7 +92,7 @@ def print_progress      (
     print(progress_str, end='\r')
     
     if current == total :
-        print('\n')    
+        print('\n')
 def join_string_array   (
     str_iterable        , 
     delimiter= ', '     ):

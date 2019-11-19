@@ -87,8 +87,8 @@ class FactoryTask(EasyObj):
 class NiceFactory(EasyObj):
     EasyObj_PARAMS  = OrderedDict((
         ('start_tasks'          , {
-            'type'      : FactoryTask   ,
-            'default'   : []    },),
+            'type'      : [FactoryTask] ,
+            'default'   : []            },),
         ('id_'                  , {
             'type'      : str           ,
             'default'   : 'nice_factory'},),
@@ -110,10 +110,10 @@ class NiceFactory(EasyObj):
         ('max_tasks'            , {
             'type'      : int   ,
             'default'   : None  },),
-        ('on_stop'      , {
+        ('on_stop'              , {
             'default'   : None      , 
             'type'      : Callable  },),
-        ('on_start'     , {
+        ('on_start'             , {
             'default'   : None      , 
             'type'      : Callable  },),))
     LIVE_FACTORIES  = []
@@ -277,7 +277,11 @@ class NiceFactory(EasyObj):
 
         '''
         while not self._does_done() :
-            signal_or_task  = self.tasks_queue.get()
+            try     :
+                signal_or_task  = self.tasks_queue.get(timeout= 1)
+            except  queue.Empty :
+                continue 
+
             if      isinstance(signal_or_task, FactoryTask) :
                 if          self.n_workers != None  :
                     worker_name = self.workers_queue.get()
@@ -404,7 +408,7 @@ class NiceFactory(EasyObj):
         self._task_thread.join()
     def join_exit           (
         self    ):
-        print('Press CTRL+C to stop the factory!')
+        print('Press CTRL+C to stop the script!')
         while True :
             try :
                 input()
@@ -415,5 +419,6 @@ class NiceFactory(EasyObj):
         self.stop()
         self.join()
         self.logger.stop()
+
 atexit.unregister(stl.Logger.stop_all)  
 atexit.register(NiceFactory.stop_all)

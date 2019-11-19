@@ -156,3 +156,9 @@ About
 
 #vscode
 .vscode/
+
+#Locals
+locals/
+
+#Ipython files
+src/__ipython__/
