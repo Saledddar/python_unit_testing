@@ -242,10 +242,10 @@ class TestEasyObj   (
                 ('p0', {}),))
         
         a           = A(None)
-        a.p0        = a 
+        b           = A('xxx')
+        a.p0        = [a, b] 
         str_str     = a.__str__()
         rep_str     = a.__repr__()
-        str_dict    = eval(str_str) 
-        assert  str_dict        .get('object_id', False)
-        assert  str_dict        .get('p0'       , False)
+        assert  'object_id' in str_str
+        assert  'xxx'       in str_str
         

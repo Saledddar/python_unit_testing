@@ -369,21 +369,22 @@ class EasyObj   :
     def __str__     (
         self        ,
         exclude = []):
+        if  self in exclude :
+            return id(self)
         dict_   = {
             'object_id' : id(self)  }
         exclude.append(self)
         for k,v in self._g_all_params().items():
             obj         = getattr(self, k)
-            is_easy_obj = hasattr(type(obj), 'EasyObj_PARAMS')
-            if      not is_easy_obj :
-                dict_[k]    = obj
-            else                    :
-                if      obj not in exclude  :
-                    dict_[k]    = obj.__str__(exclude)
-                else                        :
-                    dict_[k]    = id(obj)
-        return pformat(dict_) 
-                
+            if      isinstance(obj, list)                   :
+                dict_[k]    = [
+                    x.__str__(exclude) if hasattr(type(x), 'EasyObj_PARAMS') else str(x) for x in obj]
+            elif    hasattr(type(obj), 'EasyObj_PARAMS')    :
+                dict_[k]    = obj.__str__(exclude)
+            else                                            :
+                dict_[k]    = str(obj)
+        return pformat(dict_)
+        
     def _on_init(
         self    ):
         '''Executed after `__init___`.
