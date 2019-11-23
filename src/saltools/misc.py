@@ -2,11 +2,12 @@
 
     Module contains any function or feature that do not fall under a specific description.
 '''
-from    .common         import  EasyObj
-from    collections.abc import  Iterable
-from    collections     import  OrderedDict     , defaultdict
-from    sqlalchemy      import  create_engine
-from    enum            import  Enum
+from    .common                     import  EasyObj
+from    collections.abc             import  Iterable
+from    collections                 import  OrderedDict     , defaultdict
+from    sqlalchemy                  import  create_engine
+from    sqlalchemy_utils.functions  import  create_database , database_exists
+from    enum                        import  Enum
 
 import  json
 import  os
@@ -22,27 +23,30 @@ class DataBaseEngine    (Enum):
 
 class SQLAlchemyEBuilder(EasyObj):
     EasyObj_PARAMS  = OrderedDict((
-        ('db_engine', {
+        ('db_engine'    , {
             'default'   : DataBaseEngine.SQLITE ,
             'type'      : DataBaseEngine        },),
-        ('user'     , {
+        ('user'         , {
             'default'   : 'root',
             'type'      : str   },),
-        ('pwd'      , {
+        ('pwd'          , {
             'default'   : ''    ,
             'type'      : str   },),
-        ('host'     , {
+        ('host'         , {
             'default'   : 'localhost'   ,
             'type'      : str           },),
-        ('port'     , {
+        ('port'         , {
             'default'   : '3306'    ,
             'type'      : str       },),
-        ('db'       , {
+        ('db'           , {
             'default'   : '/sqlite.db'  ,
             'type'      : str           },),
-        ('charset'  , {
+        ('charset'      , {
             'default'   : 'utf8mb4'     ,
-            'type'      : str           },),))
+            'type'      : str           },),
+        ('is_create'    , {
+            'default'   : True          ,
+            'type'      : bool          },),))
     
     def _on_init(
         self    ):
@@ -59,6 +63,9 @@ class SQLAlchemyEBuilder(EasyObj):
                 port        = self.port                     ,
                 db          = self.db                       ,
                 charset     = self.charset                  )
+        if      not database_exists(connection_str)     and \
+                self.is_create                              :
+                create_database(connection_str)
         self.engine = create_engine(connection_str)
 
 
