@@ -1,4 +1,3 @@
-- Fix print recursion bug
 - schedule  : add weekday to time
 - Add default params values to docs
 - Lock output while printing to console

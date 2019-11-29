@@ -180,17 +180,34 @@ class Logger        (EasyObj        ):
         ('id_' , {
             'default': 'sal-logger' },),))
     
+    @classmethod            
+    def _EasyObj_parser     (
+        cls     ,
+        *args   ,
+        **kwargs):
+        if      len(args)               \
+                or 'type' not in kwargs :
+            rv  = args, kwargs
+        else                            :
+            type_   = globals().get(kwargs['type'])
+            del kwargs['type']
+            rv      = type_(*args, **kwargs)
+        
+        return rv
+    
     @staticmethod
     @atexit.register
-    def stop_all():
+    def stop_all    (
+        ):
         '''Stop all live loggers.
 
             Stops all loggers regestered at LIVE_LOGGERS
         '''
         for logger in Logger.LIVE_LOGGERS.copy():
             logger.stop()
-      
-    def __enter__   (self):
+    
+    def __enter__   (
+        self    ):
         self.start()
         return self
     def __exit__    (
@@ -363,14 +380,14 @@ class FileLogger    (ConsoleLogger  ):
         Args:
             root        (str    ): The root directory to save the logs, logs will be saved under 
                                   root/id_.
-            overwrite   (bool   ): If True, always erase previous logs on instance creation.
-            combine     (bool   ): If True, all levels are combined in one file ``combined.log``.
+            is_overwrite   (bool   ): If True, always erase previous logs on instance creation.
+            is_combine     (bool   ): If True, all levels are is_combined in one file ``is_combined.log``.
     '''
 
     EasyObj_PARAMS  = OrderedDict((
-        ('overwrite', {'default': False}),
-        ('combine'  , {'default': True }),
-        ('root'     , {'default': '.'}  )))
+        ('is_overwrite' , {'default': False}),
+        ('is_combine'   , {'default': True }),
+        ('root'         , {'default': '.'}  )))
     
     def _on_init    (
         self    ):
@@ -380,13 +397,13 @@ class FileLogger    (ConsoleLogger  ):
             os.makedirs(logs_path)
 
         #Check all log levels files:
-        if not self.combine and self.overwrite:
+        if not self.is_combine and self.is_overwrite:
             for level in Level :
                 path    = os.path.join(logs_path, level.name+ '.log')
                 open(path, 'w').close()
 
-        elif self.combine and self.overwrite:
-            path    = os.path.join(logs_path, 'combined'+ '.log')
+        elif self.is_combine and self.is_overwrite:
+            path    = os.path.join(logs_path, 'is_combined'+ '.log')
             open(path, 'w').close()
     def _g_path     (
         self    , 
@@ -404,7 +421,7 @@ class FileLogger    (ConsoleLogger  ):
         return os.path.join(
             self.root                                           , 
             self.id_                                      , 
-            ('combined' if self.combine else level.name)+ '.log')
+            ('is_combined' if self.is_combine else level.name)+ '.log')
     def _execute_log(
             self            , 
             level           , 
@@ -464,15 +481,15 @@ class SQLLogger     (ConsoleLogger  ):
 
         The logger takes care of creating the tables if they don't exist.
 
-        If overwrite is set to true, the tables are deleted and created again on each run.
+        If is_overwrite is set to true, the tables are deleted and created again on each run.
 
         Args:
             engine      (sqlalchemy.engine.base.Engine  ): The SQLAlchemy engine instance.
     '''
 
     EasyObj_PARAMS  = OrderedDict((
-        ('overwrite'        , {'default': False},),
-        ('combine'          , {'default': False},),
+        ('is_overwrite'        , {'default': False},),
+        ('is_combine'          , {'default': False},),
         ('engine_builder'   , {
             'type'      : SQLAlchemyEBuilder    ,
             'default'   : SQLAlchemyEBuilder()  },),))
@@ -484,18 +501,18 @@ class SQLLogger     (ConsoleLogger  ):
         base = declarative_base()
         self.tables = {}
                 
-        if self.combine:
+        if self.is_combine:
             _class = type(
-                '{}_{}'.format(self.id_, 'combined')  ,
+                '{}_{}'.format(self.id_, 'is_combined')  ,
                 (base,                                      ),
                 {   
-                    '__tablename__'   : '{}_{}'.format(self.id_, 'combined'),
+                    '__tablename__'   : '{}_{}'.format(self.id_, 'is_combined'),
                     'id'              : Column(Integer, primary_key=True)   ,
                     'level'           : Column(String(50))                  , 
                     'log_datetime'    : Column(String(50))                  ,
                     'title'           : Column(String(50))                  ,        
                     'message'         : Column(String(1000))                })  
-            self.tables['combined'] = _class
+            self.tables['is_combined'] = _class
 
         else:
             for level in Level :
@@ -510,7 +527,7 @@ class SQLLogger     (ConsoleLogger  ):
                         'message'         : Column(Text())                      }) 
                 self.tables[level.name] = _class 
 
-        if self.overwrite:
+        if self.is_overwrite:
             for table in self.tables.values():
                 try :
                     table.__table__.drop(self.engine)
@@ -536,8 +553,8 @@ class SQLLogger     (ConsoleLogger  ):
                 log_dict = {log_dict: ''}
         
         for key in log_dict:
-            if self.combine:
-                row = self.tables['combined'](
+            if self.is_combine:
+                row = self.tables['is_combined'](
                     log_datetime= log_datetime          ,
                     level       = level.name            ,
                     title       = key                   ,

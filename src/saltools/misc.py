@@ -12,16 +12,19 @@ from    enum                        import  Enum
 import  json
 import  os
 
-class ConfigType        (Enum):
+class ConfigType        (
+    Enum    ):
     JSON    = 0
-class DataBaseEngine    (Enum):
+class DataBaseEngine    (
+    Enum    ):
     SQLITE      = 0
     MSSQL       = 1
     MYSQL       = 2
     POSTGRESQL  = 3
     ORACLE      = 4
 
-class SQLAlchemyEBuilder(EasyObj):
+class SQLAlchemyEBuilder(
+    EasyObj ):
     EasyObj_PARAMS  = OrderedDict((
         ('db_engine'    , {
             'default'   : DataBaseEngine.SQLITE ,

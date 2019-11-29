@@ -56,6 +56,8 @@ from    enum            import  Enum
 from    inspect         import  getmro
 from    pprint          import  pformat
 
+import  importlib
+
 MY_CLASS    = '''
     Just something to indicate that the type of the parameter is the same
         as the declaring class since the type cannot be used before is declared.
@@ -336,6 +338,16 @@ class EasyObj   :
                         value       )
         
         return adapter(param_value) if adapter else param_value
+    
+    @classmethod
+    def select_type         (
+        cls     ,
+        fqn     ,
+        kwargs  ):
+        module_ = '.'.join(fqn.split('.')[:-1])
+        class_  = fqn.split('.')[-1]
+        type_   = getattr(importlib.import_module(module_), class_)
+        return type_(**kwargs)
     
     def __init__    (
         self    , 

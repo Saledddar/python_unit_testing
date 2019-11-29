@@ -317,10 +317,10 @@ class NiceFactory(EasyObj):
             self._check_status()
             if      self.manager    != None         \
                     and self.state == State.RUNNING :
-                try     :
+                try                     :
                     tasks   = self.manager()
-                except  :
-                    self.logger.error({'Manager': 'Error at manager.'})
+                except  Exception as e  :
+                    self.logger.error({'Manager': f'Error at manager, {e}'})
                     tasks   = None
                 if      tasks: 
                     for task in tasks   :
