@@ -491,8 +491,7 @@ class SQLLogger     (ConsoleLogger  ):
         ('is_overwrite'        , {'default': False},),
         ('is_combine'          , {'default': False},),
         ('engine_builder'   , {
-            'type'      : SQLAlchemyEBuilder    ,
-            'default'   : SQLAlchemyEBuilder()  },),))
+            'type'      : SQLAlchemyEBuilder    },),))
 
     def _on_init    (
         self    ):
