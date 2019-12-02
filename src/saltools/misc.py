@@ -68,9 +68,10 @@ class SQLAlchemyEBuilder(
                 charset     = self.charset                  )
         if      not database_exists(connection_str)     and \
                 self.is_create                              :
-                create_database(connection_str)
+                create_database(
+                    connection_str              ,
+                    encoding        ='utf8mb4'  )
         self.engine = create_engine(connection_str)
-
 
 def print_progress      (
     current             , 
@@ -178,7 +179,7 @@ def g_config            (
     
     return config
 def RecDefaultDict      (
-    ):
+    ): 
     '''A nice way to assign keys, values to a dict automatically.
 
         Credit goes to https://stackoverflow.com/questions/13151276/automatically-add-key-to-python-dict. 

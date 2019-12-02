@@ -31,7 +31,8 @@ def do_request  (
     session     = None      ,
     cookies     = {}        ,
     timeout     = 10        ,
-    proxies     = {}        ):
+    proxies     = {}        ,
+    verify      = False     ):
     '''Simple requests wrapper.
 
         A nice wrapper for the requests module.
@@ -54,24 +55,33 @@ def do_request  (
     for cookie in cookies:
         session.cookies.set(cookie['name'], cookie['value'])
 
-    #a json request
-    if params and is_json :
-        r = session.post(url, json= params, verify= False, timeout= timeout)
-
-    #A post request
-    elif params and is_post:
-        r = session.post(url, headers= headers,data = params, verify= False, timeout= timeout)
-
-    #A get request with params
-    elif params :
-        r = session.get(url, headers =headers, params= urlencode(params), verify= False, timeout= timeout)
-
-    #A simple get request
-    else :
-        r = session.get(url, headers =headers, verify =False, timeout= timeout)
-
-    #Return the response
-    return r, session
+    if      params and is_json  :
+        sp  = session.post(
+            url                 , 
+            json    = params    , 
+            verify  = verify    , 
+            timeout = timeout   )
+    elif    params and is_post  :
+        sp  = session.post(
+            url                 , 
+            headers = headers   ,
+            data    = params    , 
+            verify  = verify    , 
+            timeout = timeout   )
+    elif    params              :
+        sp  = session.get(
+            url                         ,
+            headers = headers           ,
+            params  = urlencode(params) ,
+            verify  = verify            ,
+            timeout = timeout           )
+    else                        :
+        sp  = session.get(
+            url                 ,
+            headers = headers   ,
+            verify  = False     ,
+            timeout = timeout   )
+    return sp, session
 def g_xpath     (
     element , 
     xpath   ):
