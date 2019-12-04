@@ -150,7 +150,7 @@ def g_path              (
         Returns:
             Object : The value at nested_dict[path[0]][path[1]] ...
     '''
-    if      isinstance(path, str)   :
+    if      isinstance(path, str)           :
         path    = path.split(path_sep)
     if      not isinstance(path, Iterable)  :
         path    = [path]

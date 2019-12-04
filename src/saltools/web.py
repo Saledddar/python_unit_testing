@@ -17,11 +17,20 @@ HEADERS = {
 
 def g_url_param (
     url             ,
-    param           ,
+    param   = None  ,
     is_list = False ):
+    '''Gets the value of given encoded param.
+
+        Args:
+            url     (str    ): URL to decode.
+            param   (str    ): Param name, If None, will return all param names and values.
+            is_list (bool   ): Is the parameter value is a list(usually separated by commas).
+        Returns:
+            dict|object : The value of the param or a dict of pram-names/values.
+    '''
     query   = urlparse(url).query
     path    = [param]+([] if is_list else [0])
-    return  g_path(parse_qs(query), path, is_return_last= False)
+    return  g_path(parse_qs(query), path, is_return_last= True)
 def do_request  (
     url                     , 
     params      = None      , 
