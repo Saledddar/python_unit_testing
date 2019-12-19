@@ -146,7 +146,7 @@ class EasyObj   :
         bool    : lambda x  :\
             True        if x.lower() in ['yes', 'y', 'true' , 'ok' , '1', 't']  \
             else False  if x.lower() in ['no' , 'n', 'false', 'not', '0', 'f']  \
-            else exec('raise Exception()')                                      ,
+            else exec('raise ValueError()')                                     ,
         int     : int       ,
         float   : float     }
     #Contains params and validators for creating the object, must be overridden
@@ -382,9 +382,9 @@ class EasyObj   :
         self        ,
         exclude = []):
         if  self in exclude :
-            return id(self)
+            return str(id(self))
         dict_   = {
-            'object_id' : id(self)  }
+            'object_id' : str(id(self))  }
         exclude.append(self)
         for k,v in self._g_all_params().items():
             obj         = getattr(self, k)
