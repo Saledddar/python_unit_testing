@@ -9,6 +9,7 @@ from    sqlalchemy                  import  create_engine
 from    sqlalchemy_utils.functions  import  create_database , database_exists
 from    enum                        import  Enum
 
+import  importlib
 import  json
 import  os
 
@@ -73,6 +74,15 @@ class SQLAlchemyEBuilder(
                     encoding        ='utf8mb4'  )
         self.engine = create_engine(connection_str)
 
+def load_module         (
+    path            ,
+    name    = None  ):
+    if      name == None    :
+        name    = os.path.split(path)[-1][:-3]
+    spec    = importlib.util.spec_from_file_location(name, path)
+    module  = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module, name
 def print_progress      (
     current             , 
     total               , 
