@@ -556,13 +556,13 @@ class SQLLogger     (ConsoleLogger  ):
                 row = self.tables['is_combined'](
                     log_datetime= log_datetime          ,
                     level       = level.name            ,
-                    title       = key                   ,
+                    title       = f'{self.id_}:::{key}' ,
                     message     = str(log_dict[key])    )
                 
             else:
                 row = self.tables[level.name](
                     log_datetime= log_datetime          ,
-                    title       = key                   ,
+                    title       = f'{self.id_}:::{key}' ,
                     message     = str(log_dict[key])    )
             self.session.add(row)
         self.session.commit()
