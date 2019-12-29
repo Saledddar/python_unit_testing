@@ -105,10 +105,12 @@ def g_xpath     (
         Returns:
             (list, str  ): An array of strings
     '''
-    #If the element is a raw html text, create an lxml tree
-    if type(element) is not HtmlElement :
-        result = fromstring(element).xpath(xpath)
-    #Else, evaluate the expression
-    else :
-        result = element.xpath(xpath)
+    #If the element has a method xpath
+    if      hasattr(element, 'xpath')   :
+        result  = element.xpath(xpath)
+    elif    isinstance(element, str)    :
+        try                                         :
+            result  = fromstring(element).xpath(xpath)
+        except    lxml.etree.XMLSyntaxError as e    :
+            result  = fromstring(f'<html>{element}</html>').xpath(xpath)
     return result
