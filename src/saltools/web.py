@@ -113,4 +113,6 @@ def g_xpath     (
             result  = fromstring(element).xpath(xpath)
         except    lxml.etree.XMLSyntaxError as e    :
             result  = fromstring(f'<html>{element}</html>').xpath(xpath)
+    else                                :
+        raise TypeError("Expected str or lxml.etree._Element.")
     return result
