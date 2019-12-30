@@ -75,7 +75,7 @@ def _parse_date (
     except      :
         pass
     try         :
-        return dparse(dt_str,fuzzy= True)
+        return dparse(dt_str,fuzzy= True, default=dt(dt.now().year, 1, 1))
     except      :
         pass
     raise(ValueError(f'Can not parse datetime {dt_str}'))
