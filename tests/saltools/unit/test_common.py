@@ -1,8 +1,9 @@
+from    datetime        import  datetime        as dt
 from    collections     import  OrderedDict
 from    enum            import  Enum
 from    pprint          import  pformat
-import  saltools.common as      sltc
 
+import  saltools.common as      sltc
 import  pytest 
 
 def test_DummyObj   (
@@ -33,7 +34,10 @@ def test_AutoObj    (
 
 class TestEasyObj   (
     ):
-
+    def test_default_parsers    (
+        self    ):
+        parser  = sltc.EasyObj.DEFAULT_PARSERS[dt]
+        assert  parser('1577689633.7279496') == parser('2019-12-30T08:07:13.727950')
     def test_params             (
         self    ):
         #Tests inheritance, default params, positional params, named params.

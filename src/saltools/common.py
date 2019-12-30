@@ -55,6 +55,8 @@ from    collections     import  OrderedDict
 from    enum            import  Enum
 from    inspect         import  getmro
 from    pprint          import  pformat
+from    datetime        import  datetime    as dt
+from    dateutil.parser import  parse       as dparse
 
 import  importlib
 
@@ -62,7 +64,22 @@ MY_CLASS    = '''
     Just something to indicate that the type of the parameter is the same
         as the declaring class since the type cannot be used before is declared.
     '''
- 
+
+def _parse_date (
+    dt_str  ):
+    try         :
+        ts  = float(dt_str)
+        if      ts > 9999999999 :
+            ts  /= 100
+        return dt.fromtimestamp(ts)
+    except      :
+        pass
+    try         :
+        return dparse(dt_str,fuzzy= True)
+    except      :
+        pass
+    raise(ValueError(f'Can not parse datetime {dt_str}'))
+
 class InfoExceptionType   (Enum):
     PROVIDED_TWICE  = 1
     MISSING         = 2
@@ -143,12 +160,13 @@ class EasyObj   :
         
     '''
     DEFAULT_PARSERS = {
-        bool    : lambda x  :\
+        bool    : lambda x      :\
             True        if x.lower() in ['yes', 'y', 'true' , 'ok' , '1', 't']  \
             else False  if x.lower() in ['no' , 'n', 'false', 'not', '0', 'f']  \
             else exec('raise ValueError()')                                     ,
-        int     : int       ,
-        float   : float     }
+        int     : int           ,
+        float   : float         ,
+        dt      : _parse_date   }
     #Contains params and validators for creating the object, must be overridden
     #Must be an ordered dict.
     EasyObj_PARAMS  = OrderedDict()
