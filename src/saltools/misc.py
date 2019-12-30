@@ -131,6 +131,9 @@ def join_string_array   (
     def clean_str   (
         str_        ,
         delimiter   ):
+        if      str_ in [None]  :
+            return ''
+        str_        = str(str_)
         delimiter   = delimiter.strip()
         str_        = str_.strip()
         if      str_[:len(delimiter)]   == delimiter    :
