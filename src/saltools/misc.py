@@ -128,7 +128,22 @@ def join_string_array   (
         Returns:
             bool    : Description of return value
     '''
-    return delimiter.join([ x.strip() for x in str_iterable if isinstance(x, str) and x.strip() not in ['', delimiter.strip()]])
+    def clean_str   (
+        str_        ,
+        delimiter   ):
+        delimiter   = delimiter.strip()
+        str_        = str_.strip()
+        if      str_[:len(delimiter)]   == delimiter    :
+            str_    = str_[len(delimiter):]
+        if      str_[-len(delimiter):]  == delimiter    :
+            str_    = str_[:-len(delimiter)]
+        return str_.strip()
+    strs    = []
+    for str_ in str_iterable :
+        clean   = clean_str(str_, delimiter)
+        if      clean != '' :
+            strs.append(clean)
+    return delimiter.join(strs)
 def g_item              (
         obj , 
         attr):
