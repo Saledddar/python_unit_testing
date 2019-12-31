@@ -66,7 +66,8 @@ MY_CLASS    = '''
     '''
 
 def _parse_date (
-    dt_str  ):
+    dt_str              ,
+    is_start    = True  ):
     try         :
         ts  = float(dt_str)
         if      ts > 9999999999 :
@@ -75,7 +76,8 @@ def _parse_date (
     except      :
         pass
     try         :
-        return dparse(dt_str,fuzzy= True, default=dt(dt.now().year, 1, 1))
+        default_date    = dt(dt.now().year, 1, 1, 0, 0, 0) if is_start else dt(dt.now().year, 12, 31, 23, 59, 59)
+        return dparse(dt_str,fuzzy= True, default= default_date )
     except      :
         pass
     raise(ValueError(f'Can not parse datetime {dt_str}'))
