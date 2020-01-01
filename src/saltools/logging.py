@@ -509,8 +509,8 @@ class SQLLogger     (ConsoleLogger  ):
                     'id'              : Column(Integer, primary_key=True)   ,
                     'level'           : Column(String(50))                  , 
                     'log_datetime'    : Column(String(50))                  ,
-                    'title'           : Column(UnicodeText())               ,        
-                    'message'         : Column(UnicodeText())               })  
+                    'title'           : Column(UnicodeText(length=2**31))   ,        
+                    'message'         : Column(UnicodeText(length=2**31))   })  
             self.tables['is_combined'] = _class
 
         else:
@@ -522,8 +522,8 @@ class SQLLogger     (ConsoleLogger  ):
                         '__tablename__'   : '{}_{}'.format(self.id_, level.name),
                         'id'              : Column(Integer, primary_key=True)   ,
                         'log_datetime'    : Column(String(50))                  ,
-                        'title'           : Column(UnicodeText())               ,        
-                        'message'         : Column(UnicodeText())               }) 
+                        'title'           : Column(UnicodeText(length=2**31))   ,        
+                        'message'         : Column(UnicodeText(length=2**31))   }) 
                 self.tables[level.name] = _class 
 
         if self.is_overwrite:
