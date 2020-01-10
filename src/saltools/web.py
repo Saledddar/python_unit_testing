@@ -59,28 +59,26 @@ def do_request  (
             (requests.Response, requests.Session ): A response, session tuple.
     '''
     session = session if session else requests.Session()
-    session.headers.update(HEADERS)
+    session.headers.update(headers)
     session.proxies.update(proxies)
     for cookie in cookies:
         session.cookies.set(cookie['name'], cookie['value'])
 
     if      params and is_json  :
         sp  = session.post(
-            url                 , 
+            url                 ,
             json    = params    , 
             verify  = verify    , 
             timeout = timeout   )
     elif    params and is_post  :
         sp  = session.post(
-            url                 , 
-            headers = headers   ,
-            data    = params    , 
-            verify  = verify    , 
+            url                 ,
+            data    = params    ,
+            verify  = verify    ,
             timeout = timeout   )
     elif    params              :
         sp  = session.get(
             url                         ,
-            headers = headers           ,
             params  = urlencode(params) ,
             verify  = verify            ,
             timeout = timeout           )

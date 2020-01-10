@@ -9,7 +9,7 @@ import  stat
 import  os
 import  re
 
-def rmtree                          (
+def rmtree          (
     folder  ):
     '''Removes folders.
         Removes the folder and any readonly files.
@@ -25,35 +25,27 @@ def rmtree                          (
         for name in dirs:
             os.rmdir(os.path.join(ROOT, name))
     os.rmdir(folder)
-def create_path_in_script_directory (
+def c_path_folder   (
+    file_   ,
     *args   ):
-    '''Generates a path in the caller script folder.
+    '''Generates a in the same folder as file_.
 
-        Generates a path in the directory of the caller script.
-        If the relative path doesn't exist, it is created.
-        If the path contains a file, it is not created.
-        
         Args:
-            *args  (str ): relative path to the directory of the caller module.
+            *args  (str ): New relative path.
         
         Returns:
             str : the created path. 
     '''
-    file_name           = os.path.join(*args)
-    script_file_path    = os.path.realpath(__file__)
-    script_directory    = os.path.dirname(script_file_path)
+    abs_path    = os.path.abspath(file_)
+    folder      = os.path.dirname(abs_path)
+    path        = os.path.join(folder, *args)
+    directory   = os.path.dirname(path)
 
-    #Make sure directory exists if nested
-    directory =os.path.join(script_directory,os.path.dirname(file_name))
-    if not os.path.exists(directory):
+    if      not os.path.exists(directory):
         os.makedirs(directory)
 
-    #Build the file path using the file name and the directory path
-    file_path   = os.path.join(script_directory,file_name)
-
-    #return
-    return file_path
-def g_filders                       (
+    return path
+def g_filders       (
     root                , 
     regex               , 
     absolute    = False , 
