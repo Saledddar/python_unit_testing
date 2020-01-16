@@ -51,7 +51,7 @@
             >>> B(degree= ' bachelor ').__dict__
                 {'degree': 'bachelor', 'id': ' id-001 ', 'name': 'My name is Sal', 'age': 20, 'male': True}
 '''
-from    collections     import  OrderedDict
+from    collections     import  OrderedDict , Sequence
 from    enum            import  Enum
 from    inspect         import  getmro
 from    pprint          import  pformat
@@ -59,6 +59,7 @@ from    datetime        import  datetime    as dt
 from    dateutil.parser import  parse       as dparse
 
 import  importlib
+import  json
 
 MY_CLASS    = '''
     Just something to indicate that the type of the parameter is the same
@@ -400,23 +401,30 @@ class EasyObj   :
         self._on_init()
     def __str__     (
         self        ,
-        exclude = []):
+        exclude = []    ,
+        is_id   = True  ):
         if  self in exclude :
-            return str(id(self))
+            return str(id(self)) if is_id else ''
+        
         dict_   = {
-            'object_id' : str(id(self))  }
+            'object_id' : str(id(self)) if is_id else ''}
         exclude.append(self)
+
         for k,v in self._g_all_params().items():
             obj         = getattr(self, k)
-            if      isinstance(obj, list)                   :
+            if      isinstance(obj, Sequence)               \
+                    and not isinstance(obj, str)            :
                 dict_[k]    = [
-                    x.__str__(exclude) if hasattr(type(x), 'EasyObj_PARAMS') else str(x) for x in obj]
+                    x.__str__(exclude, is_id) if hasattr(type(x), 'EasyObj_PARAMS') else str(x) for x in obj]
             elif    hasattr(type(obj), 'EasyObj_PARAMS')    :
-                dict_[k]    = obj.__str__(exclude)
+                dict_[k]    = obj.__str__(exclude, is_id)
             else                                            :
                 dict_[k]    = str(obj)
-        exclude.clear()
-        return pformat(dict_)
+        
+        if      exclude[0] == self  :
+            exclude.clear()
+        
+        return json.dumps(dict_) if not len(exclude) else dict_
     def __eq__      (
         self    ,
         other   ):
