@@ -423,6 +423,9 @@ class EasyObj   :
             return self._g_easyObj_values() == other._g_easyObj_values()
         else                                :
             return False
+    def __hash__    (
+        self    ):
+        return hash(self.__str__())
 
     def _on_init            (
         self    ):
