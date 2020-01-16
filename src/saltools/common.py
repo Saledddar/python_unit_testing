@@ -293,7 +293,7 @@ class EasyObj   :
                     - Set to value.
                 - If type is Enum and values is a string:
                     - Try parsing.
-                - If type is an Easy_Obj and not set    :
+                - If type is an EasyObj and not set     :
                 - If a parser exists                    :
                     - Set to parser return value.
                     - Pass args or kwargs.
@@ -416,13 +416,24 @@ class EasyObj   :
             else                                            :
                 dict_[k]    = str(obj)
         return pformat(dict_)
-        
-    def _on_init(
+    def __eq__      (
+        self    ,
+        other   ):
+        if  isinstance(other, type(self))   :
+            return self._g_easyObj_values() == other._g_easyObj_values()
+        else                                :
+            return False
+
+    def _on_init            (
         self    ):
         '''Executed after `__init___`.
 
         '''
         pass
+    def _g_easyObj_values   (
+        self    ):
+        return {k: getattr(self, k) for k in self._g_all_params().keys()}
+
 class AutoObj   :
     def __init__(
         self        ,
