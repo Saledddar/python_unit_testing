@@ -415,6 +415,7 @@ class EasyObj   :
                 dict_[k]    = obj.__str__(exclude)
             else                                            :
                 dict_[k]    = str(obj)
+        exclude.clear()
         return pformat(dict_)
     def __eq__      (
         self    ,
