@@ -251,5 +251,5 @@ class TestEasyObj   (
         str_str     = a.__str__()
         rep_str     = b.__repr__()
         assert  'object_id' in str_str
-        assert  'xxx'       in str_str
+        assert  'xxx'       in rep_str
         

@@ -401,9 +401,11 @@ class EasyObj   :
         self._on_init()
     def __str__     (
         self        ,
-        exclude = []    ,
+        exclude = None  ,
         is_id   = True  ):
-        if  self in exclude :
+        if      exclude == None :
+            exclude = []
+        if  self in exclude     :
             return str(id(self)) if is_id else ''
         
         dict_   = {
@@ -420,11 +422,11 @@ class EasyObj   :
                 dict_[k]    = obj.__str__(exclude, is_id)
             else                                            :
                 dict_[k]    = str(obj)
-        
-        if      exclude[0] == self  :
-            exclude.clear()
-        
-        return json.dumps(dict_) if not len(exclude) else dict_
+
+        return pformat(dict_)
+    def __repr__    (
+        self    ):
+        return str(self)
     def __eq__      (
         self    ,
         other   ):
@@ -434,7 +436,7 @@ class EasyObj   :
             return False
     def __hash__    (
         self    ):
-        return hash(self.__str__([], False))
+        return hash(self.__str__(None, False))
 
     def _on_init            (
         self    ):
