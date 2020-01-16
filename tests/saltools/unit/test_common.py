@@ -1,10 +1,12 @@
 from    datetime        import  datetime        as dt
 from    collections     import  OrderedDict
-from    enum            import  Enum
 from    pprint          import  pformat
+from    enum            import  Enum
 
 import  saltools.common as      sltc
+
 import  pytest 
+import  json
 
 def test_DummyObj   (
     ):
@@ -243,13 +245,18 @@ class TestEasyObj   (
         class A(
             sltc.EasyObj    ):
             EasyObj_PARAMS  = OrderedDict((
-                ('p0', {}),))
+                ('p0', {}),
+                ('xx', {}),))
         
-        a           = A(None)
-        b           = A('xxx')
+        a           = A(None    , None)
+        b           = A('xxx'   , None)
+        a.xx        = b
+        b.xx        = a
         a.p0        = [a, b] 
         str_str     = a.__str__()
         rep_str     = b.__repr__()
+        
+
         assert  'object_id' in str_str
         assert  'xxx'       in rep_str
-        
+        assert  json.loads(str_str)['p0'][1]['p0'] == 'xxx'

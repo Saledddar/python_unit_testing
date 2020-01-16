@@ -403,10 +403,12 @@ class EasyObj   :
         self        ,
         exclude = None  ,
         is_id   = True  ):
+        exclude_    = exclude
+
         if      exclude == None :
             exclude = []
         if  self in exclude     :
-            return str(id(self)) if is_id else ''
+            return f'object_id_{id(self)}' if is_id else ''
         
         dict_   = {
             'object_id' : str(id(self)) if is_id else ''}
@@ -423,7 +425,7 @@ class EasyObj   :
             else                                            :
                 dict_[k]    = str(obj)
 
-        return pformat(dict_)
+        return json.dumps(dict_) if exclude_ == None else dict_
     def __repr__    (
         self    ):
         return str(self)
