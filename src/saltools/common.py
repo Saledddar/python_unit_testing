@@ -400,32 +400,10 @@ class EasyObj   :
                     base._on_init(self)
         self._on_init()
     def __str__     (
-        self        ,
-        exclude = None  ,
-        is_id   = True  ):
-        exclude_    = exclude
-
-        if      exclude == None :
-            exclude = []
-        if  self in exclude     :
-            return f'object_id_{id(self)}' if is_id else ''
+        self        ):
         
-        dict_   = {
-            'object_id' : str(id(self)) if is_id else ''}
-        exclude.append(self)
-
-        for k,v in self._g_all_params().items():
-            obj         = getattr(self, k)
-            if      isinstance(obj, Sequence)               \
-                    and not isinstance(obj, str)            :
-                dict_[k]    = [
-                    x.__str__(exclude, is_id) if hasattr(type(x), 'EasyObj_PARAMS') else str(x) for x in obj]
-            elif    hasattr(type(obj), 'EasyObj_PARAMS')    :
-                dict_[k]    = obj.__str__(exclude, is_id)
-            else                                            :
-                dict_[k]    = str(obj)
-
-        return json.dumps(dict_) if exclude_ == None else dict_
+        return pformat({k : str(v) for k,v in self._g_easyObj_values().items()  \
+                if not hasattr(type(v), 'EasyObj_PARAMS')})
     def __repr__    (
         self    ):
         return str(self)

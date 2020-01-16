@@ -245,18 +245,12 @@ class TestEasyObj   (
         class A(
             sltc.EasyObj    ):
             EasyObj_PARAMS  = OrderedDict((
-                ('p0', {}),
-                ('xx', {}),))
+                ('p0', {}),))
         
-        a           = A(None    , None)
-        b           = A('xxx'   , None)
-        a.xx        = b
-        b.xx        = a
-        a.p0        = [a, b] 
+        a           = A('xxx'   )
+        b           = A(None    )
         str_str     = a.__str__()
         rep_str     = b.__repr__()
         
-
-        assert  'object_id' in str_str
-        assert  'xxx'       in rep_str
-        assert  json.loads(str_str)['p0'][1]['p0'] == 'xxx'
+        assert  'xxx'       in str_str
+        assert  'None'      in rep_str
