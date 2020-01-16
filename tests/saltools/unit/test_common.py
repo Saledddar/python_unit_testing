@@ -240,7 +240,7 @@ class TestEasyObj   (
             'pB0'   : [a0]  ,
             'pB1'   : [1]   }
         assert  b0.pB0[0].pA0 == 'pA0'
-    def test_str                (
+    def test_str_repr           (
         self    ):
         class A(
             sltc.EasyObj    ):

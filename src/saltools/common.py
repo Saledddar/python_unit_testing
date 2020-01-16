@@ -416,7 +416,7 @@ class EasyObj   :
             return False
     def __hash__    (
         self    ):
-        return hash(self.__str__(None, False))
+        return hash(str(self))
 
     def _on_init            (
         self    ):
