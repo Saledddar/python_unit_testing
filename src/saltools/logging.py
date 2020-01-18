@@ -358,7 +358,7 @@ class ConsoleLogger (Logger         ):
         else                :
             if      not isinstance(log_dict, dict)    :
                 log_dict = {log_dict: ''}
-            prefix          +='' if self.is_raw else '\n'
+            prefix          +='' if is_raw else '\n'
             format_message  = lambda message: '\n'+ '\n'.join(textwrap.wrap(
                         message                         , 
                         subsequent_indent   = '\t\t'    , 
