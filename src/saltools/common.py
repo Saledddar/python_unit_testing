@@ -232,16 +232,24 @@ class EasyObj   :
         def_non_positional_params   = OrderedDict()
 
         #Get the full list of params from all the parent classes
-        for _type in reversed(getmro(cls)):
-            if hasattr(_type, 'EasyObj_PARAMS'):
+        for type_ in reversed(getmro(cls)):
+            if hasattr(type_, 'EasyObj_PARAMS'):
                 #Set positional params
                 def_positional_params.update({
-                    x: _type.EasyObj_PARAMS[x] for x in _type.EasyObj_PARAMS if\
-                       'default' not in _type.EasyObj_PARAMS[x]} )
+                    x: type_.EasyObj_PARAMS[x] for x in type_.EasyObj_PARAMS if\
+                       'default' not in type_.EasyObj_PARAMS[x]} )
                 #Set non positional params
                 def_non_positional_params.update({
-                    x: _type.EasyObj_PARAMS[x] for x in _type.EasyObj_PARAMS if\
-                       'default' in _type.EasyObj_PARAMS[x]} )
+                    x: type_.EasyObj_PARAMS[x] for x in type_.EasyObj_PARAMS if\
+                       'default' in type_.EasyObj_PARAMS[x]} )
+                
+                #Fix Same class reference types
+                for x,x_dict in def_non_positional_params.items()   :
+                    if      x_dict.get('type') == MY_CLASS  :
+                        x_dict['type'] = type_
+                for x,x_dict in def_positional_params.items()       :
+                    if      x_dict.get('type') == MY_CLASS  :
+                        x_dict['type'] = type_
 
         #Merge the params
         def_params = def_positional_params
