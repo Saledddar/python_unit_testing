@@ -381,7 +381,7 @@ class FileLogger    (ConsoleLogger  ):
             root        (str    ): The root directory to save the logs, logs will be saved under 
                                   root/id_.
             is_overwrite   (bool   ): If True, always erase previous logs on instance creation.
-            is_combine     (bool   ): If True, all levels are is_combined in one file ``is_combined.log``.
+            is_combine     (bool   ): If True, all levels are combined in one file ``combined.log``.
     '''
 
     EasyObj_PARAMS  = OrderedDict((
@@ -403,7 +403,7 @@ class FileLogger    (ConsoleLogger  ):
                 open(path, 'w').close()
 
         elif self.is_combine and self.is_overwrite:
-            path    = os.path.join(logs_path, 'is_combined'+ '.log')
+            path    = os.path.join(logs_path, 'combined'+ '.log')
             open(path, 'w').close()
     def _g_path     (
         self    , 
@@ -419,9 +419,9 @@ class FileLogger    (ConsoleLogger  ):
                 str     : Logging file path. 
         '''
         return os.path.join(
-            self.root                                           , 
-            self.id_                                      , 
-            ('is_combined' if self.is_combine else level.name)+ '.log')
+            self.root                                               , 
+            self.id_                                                , 
+            ('combined' if self.is_combine else level.name)+ '.log' )
     def _execute_log(
             self            , 
             level           , 
@@ -502,16 +502,17 @@ class SQLLogger     (ConsoleLogger  ):
                 
         if self.is_combine:
             _class = type(
-                '{}_{}'.format(self.id_, 'is_combined')  ,
-                (base,                                      ),
-                {   
-                    '__tablename__'   : '{}_{}'.format(self.id_, 'is_combined'),
-                    'id'              : Column(Integer, primary_key=True)   ,
-                    'level'           : Column(String(50))                  , 
-                    'log_datetime'    : Column(String(50))                  ,
-                    'title'           : Column(UnicodeText(length=2**31))   ,        
-                    'message'         : Column(UnicodeText(length=2**31))   })  
-            self.tables['is_combined'] = _class
+                '{}_{}'.format(self.id_, 'combined')    ,
+                (base,  )                               ,
+                    {   
+                        '__tablename__'   : '{}_{}'.format(self.id_, 'combined')    ,
+                        'id'              : Column(Integer, primary_key=True)       ,
+                        'level'           : Column(String(50))                      , 
+                        'log_datetime'    : Column(String(50))                      ,
+                        'title'           : Column(UnicodeText(length=2**31))       ,        
+                        'message'         : Column(UnicodeText(length=2**31))       ,
+                    })  
+            self.tables['combined'] = _class
 
         else:
             for level in Level :
@@ -553,7 +554,7 @@ class SQLLogger     (ConsoleLogger  ):
         
         for key in log_dict:
             if self.is_combine:
-                row = self.tables['is_combined'](
+                row = self.tables['combined'](
                     log_datetime= log_datetime          ,
                     level       = level.name            ,
                     title       = f'{self.id_}:::{key}' ,
